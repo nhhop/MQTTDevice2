@@ -6,11 +6,12 @@ class TemperatureSensor
   bool sens_isConnected;         // ist der Sensor verbunden
   float sens_offset = 0.0;       // Offset - Temp kalibrieren
   float sens_value = -127.0;     // Aktueller Wert
-  String sens_name;              // Name für Anzeige auf Website
   unsigned char sens_address[8]; // 1-Wire Adresse
-  char sens_mqtttopic[50];       // Für MQTT Kommunikation
 
 public:
+  bool sens_remote = false;
+  String sens_name;              // Name für Anzeige auf Website
+  String sens_mqtttopic = "";       // Für MQTT Kommunikation
   // moved to private and get methods. change as set method
 
   String getSens_adress_string()
@@ -18,13 +19,19 @@ public:
     return SensorAddressToString(sens_address);
   }
 
-  TemperatureSensor(String new_address, String new_mqtttopic, String new_name, float new_offset, bool new_sw)
+  TemperatureSensor(String new_address, String new_mqtttopic, String new_name, float new_offset, bool new_sw, bool new_remote)
   {
-    change(new_address, new_mqtttopic, new_name, new_offset, new_sw);
+    change(new_address, new_mqtttopic, new_name, new_offset, new_sw, new_remote);
   }
 
   void Update()
   {
+    if (sens_remote) 
+    {
+        //sens_value = 9999;
+        return;
+    }
+
     DS18B20.requestTemperatures();                        // new conversion to get recent temperatures
     sens_isConnected = DS18B20.isConnected(sens_address); // attempt to determine if the device at the given address is connected to the bus
     sens_isConnected ? sens_value = DS18B20.getTempC(sens_address) : sens_value = -127.0;
@@ -75,12 +82,20 @@ public:
     publishmqtt();
   } // void Update
 
-  void change(const String &new_address, const String &new_mqtttopic, const String &new_name, float new_offset, const bool &new_sw)
+  void change(const String &new_address, const String &new_mqtttopic, const String &new_name, float new_offset, const bool &new_sw, const bool &new_remote)
   {
-    new_mqtttopic.toCharArray(sens_mqtttopic, new_mqtttopic.length() + 1);
+    mqtt_unsubscribe();
+    
+    sens_mqtttopic = new_mqtttopic;
     sens_name = new_name;
     sens_offset = new_offset;
+    sens_remote = new_remote;
     sens_sw = new_sw;
+
+    if (sens_remote && pubsubClient.connected())
+    {      
+      mqtt_subscribe();
+    }
 
     if (new_address.length() == 16)
     {
@@ -109,6 +124,42 @@ public:
     DS18B20.setResolution(sens_address, 10);
   }
 
+  void mqtt_subscribe()
+  {
+    if (pubsubClient.connected())
+    {
+      char subscribemsg[50];
+      sens_mqtttopic.toCharArray(subscribemsg, 50);
+      DEBUG_MSG("Act: Subscribing to %s\n", subscribemsg);
+      pubsubClient.subscribe(subscribemsg);
+    }
+  }
+
+  void mqtt_unsubscribe()
+  {
+    if (pubsubClient.connected())
+    {
+      char subscribemsg[50];
+      sens_mqtttopic.toCharArray(subscribemsg, 50);
+      DEBUG_MSG("Act: Unsubscribing from %s\n", subscribemsg);
+      pubsubClient.unsubscribe(subscribemsg);
+    }
+  }
+
+  void handlemqtt(char *payload)
+  {
+    StaticJsonDocument<128> doc;
+    DeserializationError error = deserializeJson(doc, (const char *)payload);
+    if (error)
+    {
+      DEBUG_MSG("Act: handlemqtt deserialize Json error %s\n", error.c_str());
+      return;
+    }
+    Serial.print("Remote Sensor: ");
+    Serial.println(payload);
+    sens_value = doc["Sensor"]["Value"];
+  }
+
   void publishmqtt()
   {
     if (pubsubClient.connected())
@@ -127,12 +178,18 @@ public:
       sensorsObj["Type"] = "1-wire";
       char jsonMessage[100];
       serializeJson(doc, jsonMessage);
-      pubsubClient.publish(sens_mqtttopic, jsonMessage);
+      char subscribemsg[50];
+      sens_mqtttopic.toCharArray(subscribemsg, 50);
+      pubsubClient.publish(subscribemsg, jsonMessage);
     }
   }
   int getErr()
   {
     return sens_err;
+  }
+  bool getRemote()
+  {
+    return sens_remote;
   }
   bool getSw()
   {
@@ -177,12 +234,12 @@ public:
 
 // Initialisierung des Arrays -> max 6 Sensoren
 TemperatureSensor sensors[numberOfSensorsMax] = {
-    TemperatureSensor("", "", "", 0.0, false),
-    TemperatureSensor("", "", "", 0.0, false),
-    TemperatureSensor("", "", "", 0.0, false),
-    TemperatureSensor("", "", "", 0.0, false),
-    TemperatureSensor("", "", "", 0.0, false),
-    TemperatureSensor("", "", "", 0.0, false)};
+    TemperatureSensor("", "", "", 0.0, false, false),
+    TemperatureSensor("", "", "", 0.0, false, false),
+    TemperatureSensor("", "", "", 0.0, false, false),
+    TemperatureSensor("", "", "", 0.0, false, false),
+    TemperatureSensor("", "", "", 0.0, false, false),
+    TemperatureSensor("", "", "", 0.0, false, false)};
 
 // Funktion für Loop im Timer Objekt
 void handleSensors()
@@ -249,6 +306,7 @@ void handleSetSensor()
   String new_address = sensors[id].getSens_adress_string();
   float new_offset = sensors[id].getOffset();
   bool new_sw = sensors[id].getSw();
+  bool new_remote = sensors[id].getRemote();
 
   for (int i = 0; i < server.args(); i++)
   {
@@ -272,10 +330,14 @@ void handleSetSensor()
     {
       new_sw = checkBool(server.arg(i));
     }
+    if (server.argName(i) == "remote")
+    {
+      new_remote = checkBool(server.arg(i));
+    }
     yield();
   }
 
-  sensors[id].change(new_address, new_mqtttopic, new_name, new_offset, new_sw);
+  sensors[id].change(new_address, new_mqtttopic, new_name, new_offset, new_sw, new_remote);
   saveConfig();
   server.send(201, "text/plain", "created");
 }
@@ -289,10 +351,10 @@ void handleDelSensor()
   {
     if (i == (numberOfSensorsMax - 1)) // 5 - Array von 0 bis (numberOfSensorsMax-1)
     {
-      sensors[i].change("", "", "", 0.0, false);
+      sensors[i].change("", "", "", 0.0, false, false);
     }
     else
-      sensors[i].change(sensors[i + 1].getSens_adress_string(), sensors[i + 1].getTopic(), sensors[i + 1].getName(), sensors[i + 1].getOffset(), sensors[i + 1].getSw());
+      sensors[i].change(sensors[i + 1].getSens_adress_string(), sensors[i + 1].getTopic(), sensors[i + 1].getName(), sensors[i + 1].getOffset(), sensors[i + 1].getSw(), sensors[i + 1].getRemote());
 
     yield();
   }
@@ -342,6 +404,7 @@ void handleRequestSensors()
       sensorsObj["namehtml"] = str;
       sensorsObj["offset"] = sensors[i].getOffset();
       sensorsObj["sw"] = sensors[i].getSw();
+      sensorsObj["remote"] = sensors[i].getRemote();
       sensorsObj["state"] = sensors[i].getState();
       if (sensors[i].getValue() != -127.0)
         sensorsObj["value"] = sensors[i].getTotalValueString();
@@ -365,6 +428,7 @@ void handleRequestSensors()
     doc["name"] = sensors[id].getName();
     doc["offset"] = sensors[id].getOffset();
     doc["sw"] = sensors[id].getSw();
+    doc["remote"] = sensors[id].getRemote();
     doc["script"] = sensors[id].getTopic();
   }
 

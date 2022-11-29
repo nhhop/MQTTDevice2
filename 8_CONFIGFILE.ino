@@ -78,18 +78,21 @@ bool loadConfig()
       String sensorsScript = sensorsObj["SCRIPT"];
       String sensorsName = sensorsObj["NAME"];
       bool sensorsSwitch = false;
+      bool sensorsRemote = false;
       float sensorsOffset = 0.0;
       if (sensorsObj["SW"] || sensorsObj["SW"] == "1")
         sensorsSwitch = true;
+      if (sensorsObj["REMOTE"] || sensorsObj["REMOTE"] == "1")
+        sensorsRemote = true;
       if (sensorsObj.containsKey("OFFSET"))
         sensorsOffset = sensorsObj["OFFSET"];
 
-      sensors[i].change(sensorsAddress, sensorsScript, sensorsName, sensorsOffset, sensorsSwitch);
+      sensors[i].change(sensorsAddress, sensorsScript, sensorsName, sensorsOffset, sensorsSwitch, sensorsRemote);
       DEBUG_MSG("Sensor #: %d Name: %s Address: %s MQTT: %s Offset: %f SW: %d\n", (i + 1), sensorsName.c_str(), sensorsAddress.c_str(), sensorsScript.c_str(), sensorsOffset, sensorsSwitch);
       i++;
     }
     else
-      sensors[i].change("", "", "", 0.0, false);
+      sensors[i].change("", "", "", 0.0, false, false);
   }
   DEBUG_MSG("%s\n", "--------------------");
 
@@ -350,6 +353,7 @@ bool saveConfig()
     sensorsObj["OFFSET"] = sensors[i].getOffset();
     sensorsObj["SCRIPT"] = sensors[i].getTopic();
     sensorsObj["SW"] = (int)sensors[i].getSw();
+    sensorsObj["REMOTE"] = (int)sensors[i].getRemote();
     DEBUG_MSG("Sensor #: %d Name: %s Address: %s MQTT: %s Offset: %f SW: %d\n", (i + 1), sensors[i].getName().c_str(), sensors[i].getSens_adress_string().c_str(), sensors[i].getTopic().c_str(), sensors[i].getOffset(), sensors[i].getSw());
   }
 

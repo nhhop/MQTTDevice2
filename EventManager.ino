@@ -143,6 +143,14 @@ void listenerSystem(int event, int parm) // System event listener
         actors[i].mqtt_subscribe();
         yield();
       }
+      for (int i = 0; i < numberOfSensors; i++)
+      {
+        if (sensors[i].sens_remote)
+        {        
+          sensors[i].mqtt_subscribe();
+        }
+        yield();
+      }
       if (inductionCooker.isEnabled)
         inductionCooker.mqtt_subscribe();
       if (cbpi == true) // CBPi4
