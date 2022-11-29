@@ -205,6 +205,10 @@
             <label class="form-check-label" for="modal_induction_enabled"> Aktiviere Induktionskochfeld</label>
           </div>
           <div class="form-group">
+            <label for="modal_induction_type">IDS Modell</label>
+            <select class="form-control" id="modal_induction_type"></select>
+          </div>
+          <div class="form-group">
             <label for="modal_induction_script">MQTT Topic</label>
             <input type="text" class="form-control" placeholder="" id="modal_induction_script" />
           </div>
@@ -835,6 +839,7 @@
 
     $('#induction_modal').on('show.bs.modal', function (event) {
       var button = $(event.relatedTarget);
+      $('#modal_induction_type').load('/reqIndu?req=types');
       $('#modal_induction_pinwhite').load('/reqIndu?req=pins&id=0');
       $('#modal_induction_pinyellow').load('/reqIndu?req=pins&id=1');
       $('#modal_induction_pinblue').load('/reqIndu?req=pins&id=2');
@@ -850,6 +855,7 @@
 
     $("#modal_induction_btn_save").click(function () {
       var modal = $('#induction_modal');
+      var ids_type = modal.find('#modal_induction_type').val();
       var mqtttopic = modal.find('#modal_induction_script').val();
       var pin_white = modal.find('#modal_induction_pinwhite').val();
       var pin_blue = modal.find('#modal_induction_pinblue').val();
@@ -860,7 +866,7 @@
       var grafana = modal.find('#modal_induction_grafana').prop("checked");
 
       $.ajax({
-        url: '/setIndu?enabled=' + enabled + '&topic=' + mqtttopic + '&pinwhite=' + pin_white + '&pinyellow=' + pin_yellow + '&pinblue=' + pin_blue + '&delay=' + delay + '&pl=' + pl + '&grafana=' + grafana,
+        url: '/setIndu?enabled=' + enabled + '&idstype=' + ids_type + '&topic=' + mqtttopic + '&pinwhite=' + pin_white + '&pinyellow=' + pin_yellow + '&pinblue=' + pin_blue + '&delay=' + delay + '&pl=' + pl + '&grafana=' + grafana,
         type: 'POST',
         dataType: 'html',
         async: false,

@@ -106,7 +106,10 @@ bool loadConfig()
     String indScript = indObj["TOPIC"];
     long indDelayOff = DEF_DELAY_IND; //default delay
     int indPowerLevel = 100;
+    unsigned char ids_type = 1;
 
+    if (indObj.containsKey("IDS_TYPE"))
+      ids_type = indObj["IDS_TYPE"];
     if (indObj["GRAF"] || indObj["GRAF"] == "1")
       indGrafana = true;
     if (indObj.containsKey("PL"))
@@ -114,7 +117,7 @@ bool loadConfig()
     if (indObj.containsKey("DELAY"))
       indDelayOff = indObj["DELAY"];
 
-    inductionCooker.change(StringToPin(indPinWhite), StringToPin(indPinYellow), StringToPin(indPinBlue), indScript, indDelayOff, indEnabled, indPowerLevel, indGrafana);
+    inductionCooker.change(ids_type ,StringToPin(indPinWhite), StringToPin(indPinYellow), StringToPin(indPinBlue), indScript, indDelayOff, indEnabled, indPowerLevel, indGrafana);
     DEBUG_MSG("Induction: %d MQTT: %s Relais (WHITE): %s Command channel (YELLOW): %s Backchannel (BLUE): %s Delay after power off %d Power level on error: %d Graf: %d\n", inductionStatus, indScript.c_str(), indPinWhite.c_str(), indPinYellow.c_str(), indPinBlue.c_str(), (indDelayOff / 1000), indPowerLevel, indGrafana);
   }
   else
@@ -358,6 +361,7 @@ bool saveConfig()
   {
     inductionStatus = 1;
     JsonObject indObj = indArray.createNestedObject();
+    indObj["IDS_TYPE"] = (unsigned char)inductionCooker.IDS_TYPE;
     indObj["PINWHITE"] = PinToString(inductionCooker.PIN_WHITE);
     indObj["PINYELLOW"] = PinToString(inductionCooker.PIN_YELLOW);
     indObj["PINBLUE"] = PinToString(inductionCooker.PIN_INTERRUPT);

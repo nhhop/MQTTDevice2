@@ -17,6 +17,8 @@ class induction
   long powerLow = 0;
 
 public:
+  unsigned char IDS_TYPE = 2;
+
   unsigned char PIN_WHITE = 14;     // D5 RELAIS
   unsigned char PIN_YELLOW = 12;    // D6 AUSGABE AN PLATTE
   unsigned char PIN_INTERRUPT = 13; // D7 EINGABE VON PLATTE
@@ -42,7 +44,7 @@ public:
     setupCommands();
   }
 
-  void change(unsigned char pinwhite, unsigned char pinyellow, unsigned char pinblue, String topic, long delayoff, bool is_enabled, int powerLevel, bool new_grafana)
+  void change(unsigned char idstype, unsigned char pinwhite, unsigned char pinyellow, unsigned char pinblue, String topic, long delayoff, bool is_enabled, int powerLevel, bool new_grafana)
   {
     if (isEnabled)
     {
@@ -71,6 +73,7 @@ public:
     }
 
     // Neue Variablen Speichern
+    IDS_TYPE = idstype;
     PIN_WHITE = pinwhite;
     PIN_YELLOW = pinyellow;
     PIN_INTERRUPT = pinblue;
@@ -256,57 +259,60 @@ public:
     }
   }
 
+  // Test 20220903
   void updatePower()
   {
-    lastCommand = millis();
-
-    if (power != newPower)
-    { /* Neuer Befehl empfangen */
-
+    if (power != newPower) // Neuer Befehl empfangen
+    {
       if (newPower > 100)
       {
-        newPower = 100; /* Nicht > 100 */
+        newPower = 100; // Nicht > 100
       }
       if (newPower < 0)
       {
-        newPower = 0; /* Nicht < 0 */
+        newPower = 0; // Nicht < 0
       }
       power = newPower;
 
       timeTurnedoff = 0;
       isInduon = true;
-      long difference = 0;
-
       if (power == 0)
       {
         CMD_CUR = 0;
         timeTurnedoff = millis();
         isInduon = false;
-        difference = 0;
-        goto setPowerLevel;
-      }
-
-      for (int i = 1; i < 7; i++)
-      {
-        if (power <= PWR_STEPS[i])
-        {
-          CMD_CUR = i;
-          difference = PWR_STEPS[i] - power;
-          goto setPowerLevel;
-        }
-      }
-
-    setPowerLevel: /* Wie lange "HIGH" oder "LOW" */
-      if (difference != 0)
-      {
-        powerLow = powerSampletime * difference / 20L;
-        powerHigh = powerSampletime - powerLow;
+        /* Wie lange "HIGH" oder "LOW" */
+        powerHigh = powerSampletime;
+        powerLow = 0;
       }
       else
       {
-        powerHigh = powerSampletime;
-        powerLow = 0;
-      } // Test#1
+        for (int i = IDS_TYPE; i < 11; i+= IDS_TYPE)
+        {
+          if (power <= PWR_STEPS[i])
+          {
+            CMD_CUR = i/IDS_TYPE;
+            /* Wie lange "HIGH" oder "LOW" */
+            powerLow = powerSampletime * (PWR_STEPS[CMD_CUR]*IDS_TYPE - power) / 20L;
+            powerHigh = powerSampletime - powerLow;
+            
+            Serial.print("P_set: ");
+            Serial.print(power);
+            Serial.print("% IDS");
+            Serial.print(IDS_TYPE);
+            Serial.print(" -> Stufe:");
+            Serial.print(CMD_CUR);
+            Serial.print(" (");
+            Serial.print(PWR_STEPS[CMD_CUR]*IDS_TYPE);
+            Serial.print("%), on:");
+            Serial.print(powerHigh);
+            Serial.print("/off:");
+            Serial.println(powerLow);
+
+            return;
+          }
+        }
+      }
     }
   }
 
@@ -411,6 +417,8 @@ void handleRequestInduction()
       doc["powerLevel"] = max(0, inductionCooker.CMD_CUR - 1);
     }
   }
+  
+  doc["idstype"] = inductionCooker.IDS_TYPE;
   doc["topic"] = inductionCooker.mqtttopic;
   doc["delay"] = inductionCooker.delayAfteroff / 1000;
   doc["pl"] = inductionCooker.powerLevelOnError;
@@ -461,6 +469,21 @@ void handleRequestIndu()
     }
     goto SendMessage;
   }
+  if (request = "idstypes")
+  {
+    message += F("<option>");
+    message += inductionCooker.IDS_TYPE;    
+    message += F("</option><option disabled>──────────</option>");
+
+    message += F("<option>");
+    if (inductionCooker.IDS_TYPE == 1)
+      message += 2;
+    else
+      message += 1;    
+    message += F("</option>");
+
+    goto SendMessage;
+  }
 
 SendMessage:
   server.send(200, "text/plain", message);
@@ -468,6 +491,7 @@ SendMessage:
 
 void handleSetIndu()
 {
+  int ids_type = inductionCooker.IDS_TYPE;
   unsigned char pin_white = inductionCooker.PIN_WHITE;
   unsigned char pin_blue = inductionCooker.PIN_INTERRUPT;
   unsigned char pin_yellow = inductionCooker.PIN_YELLOW;
@@ -482,6 +506,10 @@ void handleSetIndu()
     if (server.argName(i) == "enabled")
     {
         is_enabled = checkBool(server.arg(i));
+    }
+    if (server.argName(i) == "idstype")
+    {
+        ids_type = server.arg(i).toInt();
     }
     if (server.argName(i) == "topic")
     {
@@ -517,7 +545,7 @@ void handleSetIndu()
     yield();
   }
 
-  inductionCooker.change(pin_white, pin_yellow, pin_blue, topic, delayoff, is_enabled, pl, new_grafana);
+  inductionCooker.change(ids_type, pin_white, pin_yellow, pin_blue, topic, delayoff, is_enabled, pl, new_grafana);
   saveConfig();
   server.send(201, "text/plain", "created");
 }
