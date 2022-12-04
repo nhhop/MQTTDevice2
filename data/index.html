@@ -62,7 +62,7 @@
       <div class="row">
         <div class="col-md-12">
           <div class="card">
-            <div class="card-header">Induktionskochfeld GGM IDS2 <a href="" class="badge badge-warning"
+            <div class="card-header">Induktionskochfeld GGM IDS <a href="" class="badge badge-warning"
                 data-target="#induction_modal" data-toggle="modal" data-value="-1" style="float:right">bearbeiten</a>
             </div>
             <div class="card-body">
@@ -136,8 +136,8 @@
             <label class="custom-control-label" for="modal_actor_switchable">Aktiviere Event handling</label>
           </div>
           <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" value="" id="modal_actor_grafana" />
-            <label class="custom-control-label" for="modal_actor_grafana">Nur CBPi3: Aktiviere Grafana</label>
+            <input type="checkbox" class="custom-control-input" value="" id="modal_actor_remote" />
+            <label class="custom-control-label" for="modal_actor_remote">Nur CBPi3: Aktiviere remote</label>
           </div>
         </div>
         <div class="modal-footer"> <button type="button" class="btn btn-outline-success"
@@ -238,8 +238,8 @@
             <input type="text" class="form-control" placeholder="" id="modal_induction_pl" />
           </div>
           <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" value="" id="modal_induction_grafana" />
-            <label class="custom-control-label" for="modal_induction_grafana">Nur CBPi3: Aktiviere Grafana</label>
+            <input type="checkbox" class="custom-control-input" value="" id="modal_induction_remote" />
+            <label class="custom-control-label" for="modal_induction_remote">Nur CBPi3: Aktiviere remote</label>
           </div>
         </div>
         <div class="modal-footer"> <button type="button" class="btn btn-outline-success"
@@ -308,7 +308,7 @@
             <div class="tab-pane fade show active" id="misc1" role="tabpanel" aria-labelledby="misc1-tab">
               <br />
               <div class="form-group">
-                <label for="modal_misc_address">IP Adresse MQTT Server (CBPi)</label>
+                <label for="modal_misc_address">IP Adresse MQTT Server</label>
                 <input type="text" class="form-control" placeholder="" id="modal_misc_address" />
               </div>
               <div class="custom-control custom-switch">
@@ -327,28 +327,6 @@
                 <label for="modal_misc_mdns_name">Eindeutiger mDNS Name</label>
                 <input type="text" class="form-control" placeholder="" id="modal_misc_mdns_name" />
               </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="modal_misc_db_enable" />
-                <label class="form-check-label" for="modal_misc_db_enable">Nur CBPi3: Aktiviere Visualisierung Grafana (Neustart
-                  erforderlich!)</label>
-              </div>
-              <div class="form-group">
-                <label for="modal_misc_db_server">Influx Datenbank Server IP</label>
-                <input type="text" class="form-control" placeholder="" id="modal_misc_db_server" />
-              </div>
-              <div class="form-group">
-                <label for="modal_misc_db_database">Datenbank Name (mqttdevice)</label>
-                <input type="text" class="form-control" placeholder="" id="modal_misc_db_database" />
-              </div>
-              <div class="form-group">
-                <label for="modal_misc_db_user">Datenbank Benutzer</label>
-                <input type="text" class="form-control" placeholder="" id="modal_misc_db_user" />
-              </div>
-              <div class="form-group">
-                <label for="modal_misc_db_pass">Datenbank Benutzer Password</label>
-                <input type="text" class="form-control" placeholder="" id="modal_misc_db_pass" />
-              </div>
-            </div>
             <div class="tab-pane fade" id="misc2" role="tabpanel" aria-labelledby="misc2-tab">
               <br />
               <div class="form-group">
@@ -654,14 +632,7 @@
         else {
           miscRender += " badge-danger'> Offline";
         }
-        miscRender += "</span></li> </li>  <li class='list-group-item d-flex justify-content-between align-items-center'> Visualisierung Grafana <span class='badge ";
-        if (data.startdb) {
-          miscRender += " badge-success'> Aktiviert";
-        }
-        else {
-          miscRender += " badge-dark'> Deaktiviert";
-        }
-        miscRender += " </span> </li>";
+        miscRender += "</span></li> </li>";
         $('#miscSettings').html(miscRender);
 
         if (data.alertstate) {
@@ -758,7 +729,7 @@
         modal.find('#modal_actor_script').val(data.mqtt);
         modal.find('#modal_actor_inverted').prop("checked", Boolean(Number(data.inv)));
         modal.find('#modal_actor_switchable').prop("checked", Boolean(Number(data.sw)));
-        modal.find('#modal_actor_grafana').prop("checked", Boolean(Number(data.grafana)));
+        modal.find('#modal_actor_remote').prop("checked", Boolean(Number(data.remote)));
       });
     })
 
@@ -769,10 +740,10 @@
       var actorpin = modal.find('#modal_actor_pin').val();
       var actorinverted = modal.find('#modal_actor_inverted').prop("checked");
       var actorswitchable = modal.find('#modal_actor_switchable').prop("checked");
-      var actorgraf = modal.find('#modal_actor_grafana').prop("checked");
+      var actorgraf = modal.find('#modal_actor_remote').prop("checked");
       var actorid = modal.attr('actor_id')
       $.ajax({
-        url: '/setActor?id=' + actorid + '&name=' + actorname + '&script=' + actorscript + '&pin=' + actorpin + '&inv=' + actorinverted + '&sw=' + actorswitchable + '&grafana=' + actorgraf,
+        url: '/setActor?id=' + actorid + '&name=' + actorname + '&script=' + actorscript + '&pin=' + actorpin + '&inv=' + actorinverted + '&sw=' + actorswitchable + '&remote=' + actorgraf,
         type: 'POST',
         dataType: 'html',
         async: false,
@@ -864,7 +835,7 @@
         modal.find('#modal_induction_delay').val(data.delay);
         modal.find('#modal_induction_pl').val(data.pl);
         modal.find('#modal_induction_enabled').prop("checked", Boolean(Number(data.enabled)));
-        modal.find('#modal_induction_grafana').prop("checked", Boolean(Number(data.grafana)));
+        modal.find('#modal_induction_remote').prop("checked", Boolean(Number(data.remote)));
       });
     });
 
@@ -878,10 +849,10 @@
       var delay = modal.find('#modal_induction_delay').val();
       var pl = modal.find('#modal_induction_pl').val();
       var enabled = modal.find('#modal_induction_enabled').prop("checked");
-      var grafana = modal.find('#modal_induction_grafana').prop("checked");
+      var remote = modal.find('#modal_induction_remote').prop("checked");
 
       $.ajax({
-        url: '/setIndu?enabled=' + enabled + '&idstype=' + ids_type + '&topic=' + mqtttopic + '&pinwhite=' + pin_white + '&pinyellow=' + pin_yellow + '&pinblue=' + pin_blue + '&delay=' + delay + '&pl=' + pl + '&grafana=' + grafana,
+        url: '/setIndu?enabled=' + enabled + '&idstype=' + ids_type + '&topic=' + mqtttopic + '&pinwhite=' + pin_white + '&pinyellow=' + pin_yellow + '&pinblue=' + pin_blue + '&delay=' + delay + '&pl=' + pl + '&remote=' + remote,
         type: 'POST',
         dataType: 'html',
         async: false,
@@ -934,12 +905,6 @@
         modal.find('#modal_misc_upsen').val(data.upsen);
         modal.find('#modal_misc_upact').val(data.upact);
         modal.find('#modal_misc_upind').val(data.upind);
-        modal.find('#modal_misc_db_server').val(data.dbserver);
-        modal.find('#modal_misc_db_enable').prop("checked", Boolean(Number(data.startdb)));
-        modal.find('#modal_misc_db_database').val(data.dbdatabase);
-        modal.find('#modal_misc_db_user').val(data.dbuser);
-        modal.find('#modal_misc_db_pass').val(data.dbpass);
-        modal.find('#modal_misc_db_up').val(data.dbup);
       });
     });
 
@@ -953,25 +918,16 @@
       var upsen = modal.find('#modal_misc_upsen').val();
       var upact = modal.find('#modal_misc_upact').val();
       var upind = modal.find('#modal_misc_upind').val();
-      var dbserver = modal.find('#modal_misc_db_server').val();
-      var dbdatabase = modal.find('#modal_misc_db_database').val();
-      var dbuser = modal.find('#modal_misc_db_user').val();
-      var dbpass = modal.find('#modal_misc_db_pass').val();
-      var dbup = modal.find('#modal_misc_db_up').val();
-      //var dburl = modal.find('#modal_misc_db_url').val()
-      // Alle & durch ! ersetzen - senden an ESP funktioniert sonst nicht 
-      //var dburl2 = dburl.replace(/&/g, "!");
 
       var mdns = modal.find('#modal_misc_mdns').prop("checked");
       var buzzer = modal.find('#modal_misc_buzzer').prop("checked");
       var cbpi = modal.find('#modal_misc_cbpi').prop("checked");
       var enable_mqtt = modal.find('#modal_misc_onErrorMQTT').prop("checked");
-      var startdb = modal.find('#modal_misc_db_enable').prop("checked");
       var clear = modal.find('#modal_misc_clear').prop("checked");
       var reset = modal.find('#modal_misc_reset').prop("checked");
 
       $.ajax({
-        url: '/setMisc?reset=' + reset + '&clear=' + clear + '&MQTTHOST=' + mqttaddress + '&enable_mqtt=' + enable_mqtt + '&delay_mqtt=' + delay_mqtt + '&del_sen_act=' + del_sen_act + '&del_sen_ind=' + del_sen_ind + '&mdns=' + mdns + '&mdns_name=' + mdns_name + '&cbpi=' + cbpi + '&buzzer=' + buzzer + '&upsen=' + upsen + '&upact=' + upact + '&upind=' + upind + '&startdb=' + startdb + '&dbserver=' + dbserver + '&dbdatabase=' + dbdatabase + '&dbuser=' + dbuser + '&dbpass=' + dbpass + '&dbup=' + dbup,
+        url: '/setMisc?reset=' + reset + '&clear=' + clear + '&MQTTHOST=' + mqttaddress + '&enable_mqtt=' + enable_mqtt + '&delay_mqtt=' + delay_mqtt + '&del_sen_act=' + del_sen_act + '&del_sen_ind=' + del_sen_ind + '&mdns=' + mdns + '&mdns_name=' + mdns_name + '&cbpi=' + cbpi + '&buzzer=' + buzzer + '&upsen=' + upsen + '&upact=' + upact + '&upind=' + upind,
         type: 'POST',
         dataType: 'html',
         async: false,
