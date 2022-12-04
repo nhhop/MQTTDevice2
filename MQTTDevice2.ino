@@ -29,8 +29,8 @@
 #include <WiFiClientSecureBearSSL.h>
 #include <NTPClient.h>
 #include "InnuTicker.h"         // Bibliothek für Hintergrund Aufgaben (Tasks)
-#include <PubSubClient.h>       // MQTT Kommunikation 2.8.0
 #include <uMQTTBroker.h>        // MQTT Broker
+#include <PubSubClient.h>       // MQTT Kommunikation 2.8.0 für externen Broker
 #include <CertStoreBearSSL.h>   // WebUpdate
 
 extern "C"

@@ -43,17 +43,17 @@ bool loadConfig()
       String actorName = actorObj["NAME"];
       bool actorInv = false;
       bool actorSwitch = false;
-      bool actorGrafana = false;
+      bool actorRemote = false;
 
       if (actorObj["INV"] || actorObj["INV"] == "1")
         actorInv = true;
       if (actorObj["SW"] || actorObj["SW"] == "1")
         actorSwitch = true;
-      if (actorObj["GRAF"] || actorObj["GRAF"] == "1")
-        actorGrafana = true;
+      if (actorObj["REMOTE"] || actorObj["REMOTE"] == "1")
+        actorRemote = true;
 
-      actors[i].change(actorPin, actorScript, actorName, actorInv, actorSwitch, actorGrafana);
-      DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d GRAF: %d\n", (i + 1), actorName.c_str(), actorScript.c_str(), actorPin.c_str(), actorInv, actorSwitch, actorGrafana);
+      actors[i].change(actorPin, actorScript, actorName, actorInv, actorSwitch, actorRemote);
+      DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d REMOTE: %d\n", (i + 1), actorName.c_str(), actorScript.c_str(), actorPin.c_str(), actorInv, actorSwitch, actorRemote);
       i++;
     }
   }
@@ -102,7 +102,7 @@ bool loadConfig()
   {
     inductionStatus = 1;
     bool indEnabled = true;
-    bool indGrafana = false;
+    bool indRemote = false;
     String indPinWhite = indObj["PINWHITE"];
     String indPinYellow = indObj["PINYELLOW"];
     String indPinBlue = indObj["PINBLUE"];
@@ -113,15 +113,15 @@ bool loadConfig()
 
     if (indObj.containsKey("IDS_TYPE"))
       ids_type = indObj["IDS_TYPE"];
-    if (indObj["GRAF"] || indObj["GRAF"] == "1")
-      indGrafana = true;
+    if (indObj["REMOTE"] || indObj["REMOTE"] == "1")
+      indRemote = true;
     if (indObj.containsKey("PL"))
       indPowerLevel = indObj["PL"];
     if (indObj.containsKey("DELAY"))
       indDelayOff = indObj["DELAY"];
 
-    inductionCooker.change(ids_type ,StringToPin(indPinWhite), StringToPin(indPinYellow), StringToPin(indPinBlue), indScript, indDelayOff, indEnabled, indPowerLevel, indGrafana);
-    DEBUG_MSG("Induction: %d MQTT: %s Relais (WHITE): %s Command channel (YELLOW): %s Backchannel (BLUE): %s Delay after power off %d Power level on error: %d Graf: %d\n", inductionStatus, indScript.c_str(), indPinWhite.c_str(), indPinYellow.c_str(), indPinBlue.c_str(), (indDelayOff / 1000), indPowerLevel, indGrafana);
+    inductionCooker.change(ids_type ,StringToPin(indPinWhite), StringToPin(indPinYellow), StringToPin(indPinBlue), indScript, indDelayOff, indEnabled, indPowerLevel, indRemote);
+    DEBUG_MSG("Induction: %d MQTT: %s Relais (WHITE): %s Command channel (YELLOW): %s Backchannel (BLUE): %s Delay after power off %d Power level on error: %d Remote: %d\n", inductionStatus, indScript.c_str(), indPinWhite.c_str(), indPinYellow.c_str(), indPinBlue.c_str(), (indDelayOff / 1000), indPowerLevel, indRemote);
   }
   else
   {
@@ -267,9 +267,9 @@ bool saveConfig()
     actorsObj["SCRIPT"] = actors[i].mqtttopic;
     actorsObj["INV"] = (int)actors[i].isInverted;
     actorsObj["SW"] = (int)actors[i].switchable;
-    actorsObj["GRAF"] = (int)actors[i].remote;
+    actorsObj["REMOTE"] = (int)actors[i].remote;
 
-    DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d GRAF: %d\n", (i + 1), actors[i].name.c_str(), actors[i].mqtttopic.c_str(), PinToString(actors[i].pin_actor).c_str(), actors[i].isInverted, actors[i].switchable, actors[i].remote);
+    DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d REMOTE: %d\n", (i + 1), actors[i].name.c_str(), actors[i].mqtttopic.c_str(), PinToString(actors[i].pin_actor).c_str(), actors[i].isInverted, actors[i].switchable, actors[i].remote);
   }
   if (numberOfActors == 0)
   {
@@ -307,7 +307,7 @@ bool saveConfig()
     indObj["DELAY"] = inductionCooker.delayAfteroff;
     indObj["ENABLED"] = (int)inductionCooker.isEnabled;
     indObj["PL"] = inductionCooker.powerLevelOnError;
-    indObj["GRAF"] = (int)inductionCooker.remote;
+    indObj["REMOTE"] = (int)inductionCooker.remote;
     DEBUG_MSG("Induction: %d MQTT: %s Relais (WHITE): %s Command channel (YELLOW): %s Backchannel (BLUE): %s Delay after power off %d Power level on error: %d\n", inductionCooker.isEnabled, inductionCooker.mqtttopic.c_str(), PinToString(inductionCooker.PIN_WHITE).c_str(), PinToString(inductionCooker.PIN_YELLOW).c_str(), PinToString(inductionCooker.PIN_INTERRUPT).c_str(), (inductionCooker.delayAfteroff / 1000), inductionCooker.powerLevelOnError);
   }
   else
