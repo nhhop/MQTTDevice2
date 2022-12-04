@@ -1,22 +1,22 @@
 class TemperatureSensor
 {
-  int sens_err = 0;
-  bool sens_sw = false;          // Events aktivieren
-  bool sens_state = true;        // Fehlerstatus ensor
-  bool sens_isConnected;         // ist der Sensor verbunden
-  float sens_offset = 0.0;       // Offset - Temp kalibrieren
-  float sens_value = -127.0;     // Aktueller Wert
-  unsigned char sens_address[8]; // 1-Wire Adresse
+  int err = 0;
+  bool sw = false;          // Events aktivieren
+  bool state = true;        // Fehlerstatus ensor
+  bool isConnected;         // ist der Sensor verbunden
+  float offset = 0.0;       // Offset - Temp kalibrieren
+  float value = -127.0;     // Aktueller Wert
+  unsigned char address[8]; // 1-Wire Adresse
 
 public:
-  bool sens_remote = false;
-  String sens_name;              // Name für Anzeige auf Website
-  String sens_mqtttopic = "";       // Für MQTT Kommunikation
+  bool remote = false;
+  String name;              // Name für Anzeige auf Website
+  String mqtttopic = "";       // Für MQTT Kommunikation
   // moved to private and get methods. change as set method
 
   String getSens_adress_string()
   {
-    return SensorAddressToString(sens_address);
+    return SensorAddressToString(address);
   }
 
   TemperatureSensor(String new_address, String new_mqtttopic, String new_name, float new_offset, bool new_sw, bool new_remote)
@@ -26,59 +26,59 @@ public:
 
   void Update()
   {
-    if (sens_remote) 
+    if (remote) 
     {
-        //sens_value = 9999;
+        //value = 9999;
         return;
     }
 
     DS18B20.requestTemperatures();                        // new conversion to get recent temperatures
-    sens_isConnected = DS18B20.isConnected(sens_address); // attempt to determine if the device at the given address is connected to the bus
-    sens_isConnected ? sens_value = DS18B20.getTempC(sens_address) : sens_value = -127.0;
+    isConnected = DS18B20.isConnected(address); // attempt to determine if the device at the given address is connected to the bus
+    isConnected ? value = DS18B20.getTempC(address) : value = -127.0;
 
-    if (!sens_isConnected && sens_address[0] != 0xFF && sens_address[0] != 0x00) // double check on !sens_isConnected. Billig Tempfühler ist manchmal für 1-2 loops nicht connected. 0xFF default address. 0x00 virtual test device (adress 00 00 00 00 00)
+    if (!isConnected && address[0] != 0xFF && address[0] != 0x00) // double check on !isConnected. Billig Tempfühler ist manchmal für 1-2 loops nicht connected. 0xFF default address. 0x00 virtual test device (adress 00 00 00 00 00)
     {
       millis2wait(PAUSEDS18);                               // Wartezeit ca 750ms bevor Lesen vom Sensor wiederholt wird (Init Zeit)
-      sens_isConnected = DS18B20.isConnected(sens_address); // hat der Sensor ene Adresse und ist am Bus verbunden?
-      sens_isConnected ? sens_value = DS18B20.getTempC(sens_address) : sens_value = -127.0;
+      isConnected = DS18B20.isConnected(address); // hat der Sensor ene Adresse und ist am Bus verbunden?
+      isConnected ? value = DS18B20.getTempC(address) : value = -127.0;
     }
 
-    if (sens_value == 85.0)
+    if (value == 85.0)
     {                         // 85 Grad ist Standard Temp Default Reset. Wenn das Kabel zu lang ist, kommt als Fehler 85 Grad
       millis2wait(PAUSEDS18); // Wartezeit 750ms vor einer erneuten Sensorabfrage
       DS18B20.requestTemperatures();
     }
     sensorsStatus = 0;
-    sens_state = true;
-    if (OneWire::crc8(sens_address, 7) != sens_address[7])
+    state = true;
+    if (OneWire::crc8(address, 7) != address[7])
     {
       sensorsStatus = EM_CRCER;
-      sens_state = false;
+      state = false;
     }
-    else if (sens_value == -127.00 || sens_value == 85.00)
+    else if (value == -127.00 || value == 85.00)
     {
-      if (sens_isConnected && sens_address[0] != 0xFF)
+      if (isConnected && address[0] != 0xFF)
       { // Sensor connected AND sensor address exists (not default FF)
         sensorsStatus = EM_DEVER;
-        sens_state = false;
+        state = false;
       }
-      else if (!sens_isConnected && sens_address[0] != 0xFF)
+      else if (!isConnected && address[0] != 0xFF)
       { // Sensor with valid address not connected
         sensorsStatus = EM_UNPL;
-        sens_state = false;
+        state = false;
       }
       else // not connected and unvalid address
       {
         sensorsStatus = EM_SENER;
-        sens_state = false;
+        state = false;
       }
-    } // sens_value -127 || +85
+    } // value -127 || +85
     else
     {
       sensorsStatus = EM_OK;
-      sens_state = true;
+      state = true;
     }
-    sens_err = sensorsStatus;
+    err = sensorsStatus;
     publishmqtt();
   } // void Update
 
@@ -86,13 +86,13 @@ public:
   {
     mqtt_unsubscribe();
     
-    sens_mqtttopic = new_mqtttopic;
-    sens_name = new_name;
-    sens_offset = new_offset;
-    sens_remote = new_remote;
-    sens_sw = new_sw;
+    mqtttopic = new_mqtttopic;
+    name = new_name;
+    offset = new_offset;
+    remote = new_remote;
+    sw = new_sw;
 
-    if (sens_remote && pubsubClient.connected())
+    if (remote && pubsubClient.connected())
     {      
       mqtt_subscribe();
     }
@@ -118,10 +118,10 @@ public:
       }
       for (int i = 0; i < 8; i++)
       {
-        sens_address[i] = octets[i];
+        address[i] = octets[i];
       }
     }
-    DS18B20.setResolution(sens_address, 10);
+    DS18B20.setResolution(address, 10);
   }
 
   void mqtt_subscribe()
@@ -129,7 +129,7 @@ public:
     if (pubsubClient.connected())
     {
       char subscribemsg[50];
-      sens_mqtttopic.toCharArray(subscribemsg, 50);
+      mqtttopic.toCharArray(subscribemsg, 50);
       DEBUG_MSG("Act: Subscribing to %s\n", subscribemsg);
       pubsubClient.subscribe(subscribemsg);
     }
@@ -140,7 +140,7 @@ public:
     if (pubsubClient.connected())
     {
       char subscribemsg[50];
-      sens_mqtttopic.toCharArray(subscribemsg, 50);
+      mqtttopic.toCharArray(subscribemsg, 50);
       DEBUG_MSG("Act: Unsubscribing from %s\n", subscribemsg);
       pubsubClient.unsubscribe(subscribemsg);
     }
@@ -157,7 +157,7 @@ public:
     }
     Serial.print("Remote Sensor: ");
     Serial.println(payload);
-    sens_value = doc["Sensor"]["Value"];
+    value = doc["Sensor"]["Value"];
   }
 
   void publishmqtt()
@@ -166,68 +166,68 @@ public:
     {
       StaticJsonDocument<256> doc;
       JsonObject sensorsObj = doc.createNestedObject("Sensor");
-      sensorsObj["Name"] = sens_name;
+      sensorsObj["Name"] = name;
       if (sensorsStatus == 0)
       {
-        sensorsObj["Value"] = (sens_value + sens_offset);
+        sensorsObj["Value"] = (value + offset);
       }
       else
       {
-        sensorsObj["Value"] = sens_value;
+        sensorsObj["Value"] = value;
       }
       sensorsObj["Type"] = "1-wire";
       char jsonMessage[100];
       serializeJson(doc, jsonMessage);
-      char subscribemsg[50];
-      sens_mqtttopic.toCharArray(subscribemsg, 50);
-      pubsubClient.publish(subscribemsg, jsonMessage);
+      char topic[50];
+      mqtttopic.toCharArray(topic, 50);
+      pubsubClient.publish(topic, jsonMessage);
     }
   }
   int getErr()
   {
-    return sens_err;
+    return err;
   }
   bool getRemote()
   {
-    return sens_remote;
+    return remote;
   }
   bool getSw()
   {
-    return sens_sw;
+    return sw;
   }
   bool getState()
   {
-    return sens_state;
+    return state;
   }
   float getOffset()
   {
-    return sens_offset;
+    return offset;
   }
   float getValue()
   {
-    return sens_value;
+    return value;
   }
   String getName()
   {
-    return sens_name;
+    return name;
   }
   String getTopic()
   {
-    return sens_mqtttopic;
+    return mqtttopic;
   }
   char buf[5];
   char *getValueString()
   {
-    dtostrf(sens_value, 2, 1, buf);
+    dtostrf(value, 2, 1, buf);
     return buf;
   }
   char *getTotalValueString()
   {
     sprintf(buf, "%s", "0.0");
-    if (sens_value == -127.0)
+    if (value == -127.0)
       return buf;
 
-    dtostrf((sens_value + sens_offset), 2, 1, buf);
+    dtostrf((value + offset), 2, 1, buf);
     return buf;
   }
 };
@@ -373,7 +373,7 @@ void handleRequestSensorAddresses()
   if (id != -1)
   {
     message += F("<option>");
-    // message += SensorAddressToString(sensors[id].sens_address);
+    // message += SensorAddressToString(sensors[id].address);
     message += sensors[id].getSens_adress_string();
     message += F("</option><option disabled>──────────</option>");
   }

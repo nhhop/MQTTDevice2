@@ -70,65 +70,6 @@ bool loadFromLittlefs(String path)
   return true;
 }
 
-void mqttcallback(char *topic, unsigned char *payload, unsigned int length)
-{
-  DEBUG_MSG("Web: Received MQTT Topic: %s ", topic);
-  // Serial.print("Web: Received MQTT Topic: ");
-  // Serial.println(topic);
-  // Serial.print("Web: Payload: ");
-  // for (int i = 0; i < length; i++)
-  // {
-  //   Serial.print((char)payload[i]);
-  // }
-  // Serial.println(" ");
-  char payload_msg[length];
-  for (int i = 0; i < length; i++)
-  {
-    payload_msg[i] = payload[i];
-  }
-
-  if (inductionCooker.mqtttopic == topic)
-  {
-    // if (inductionCooker.induction_state)
-      // {
-      inductionCooker.handlemqtt(payload_msg);
-      DEBUG_MSG("%s\n", "*** Handle MQTT Induktion");
-      // }
-    // else
-      // DEBUG_MSG("%s\n", "*** Verwerfe MQTT wegen Status Induktion (Event handling)");
-  }
-
-  for (int i = 0; i < numberOfActors; i++)
-  {
-    if (actors[i].argument_actor == topic)
-    {
-      // if (actors[i].actor_state)
-        // {
-        actors[i].handlemqtt(payload_msg);
-        DEBUG_MSG("%s %s\n", "*** Handle MQTT Aktor", actors[i].name_actor);
-        // }
-      // else
-        // DEBUG_MSG("%s %s\n", "*** Verwerfe MQTT zum Aktor", actors[i].name_actor);
-      yield();
-    }
-  }
-
-  for (int i = 0; i < numberOfSensors; i++)
-  {
-    if (sensors[i].sens_mqtttopic == topic)
-    {
-      // if (actors[i].actor_state)
-        // {
-        sensors[i].handlemqtt(payload_msg);
-        DEBUG_MSG("%s %s\n", "*** Handle MQTT Aktor", sensors[i].sens_name);
-        // }
-      // else
-        // DEBUG_MSG("%s %s\n", "*** Verwerfe MQTT zum Aktor", actors[i].name_actor);
-      yield();
-    }
-  }
-}
-
 void handleRequestMisc()
 {
   StaticJsonDocument<512> doc;

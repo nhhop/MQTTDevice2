@@ -53,11 +53,11 @@ void listenerSystem(int event, int parm) // System event listener
       mqtt_state = true;
       for (int i = 0; i < numberOfActors; i++)
       {
-        if (actors[i].switchable && !actors[i].actor_state)
+        if (actors[i].switchable && !actors[i].state)
         {
           DEBUG_MSG("EM MQTTRES: %s isOnBeforeError: %d Powerlevel: %d\n", actors[i].name_actor.c_str(), actors[i].isOnBeforeError, actors[i].power_actor);
           actors[i].isOn = actors[i].isOnBeforeError;
-          actors[i].actor_state = true; // Sensor ok
+          actors[i].state = true; // Sensor ok
           actors[i].Update();
         }
         yield();
@@ -145,7 +145,7 @@ void listenerSystem(int event, int parm) // System event listener
       }
       for (int i = 0; i < numberOfSensors; i++)
       {
-        if (sensors[i].sens_remote)
+        if (sensors[i].remote)
         {        
           sensors[i].mqtt_subscribe();
         }
@@ -242,11 +242,11 @@ void listenerSensors(int event, int parm) // Sensor event listener
     {
       for (int i = 0; i < numberOfActors; i++)
       {
-        if (actors[i].switchable && !actors[i].actor_state) // Sensor in normal mode: check actor in error state
+        if (actors[i].switchable && !actors[i].state) // Sensor in normal mode: check actor in error state
         {
           DEBUG_MSG("EM SenOK: %s isOnBeforeError: %d power level: %d\n", actors[i].name_actor.c_str(), actors[i].isOnBeforeError, actors[i].power_actor);
           actors[i].isOn = actors[i].isOnBeforeError;
-          actors[i].actor_state = true;
+          actors[i].state = true;
           actors[i].Update();
           lastSenAct = 0; // Delete actor timestamp after event
         }
@@ -345,13 +345,13 @@ void listenerActors(int event, int parm) // Actor event listener
   case EM_ACTER:
     for (int i = 0; i < numberOfActors; i++)
     {
-      if (actors[i].switchable && actors[i].actor_state && actors[i].isOn)
+      if (actors[i].switchable && actors[i].state && actors[i].isOn)
       {
         actors[i].isOnBeforeError = actors[i].isOn;
         actors[i].isOn = false;
-        actors[i].actor_state = false;
+        actors[i].state = false;
         actors[i].Update();
-        DEBUG_MSG("EM ACTER: Aktor: %s : %d isOnBeforeError: %d\n", actors[i].name_actor.c_str(), actors[i].actor_state, actors[i].isOnBeforeError);
+        DEBUG_MSG("EM ACTER: Aktor: %s : %d isOnBeforeError: %d\n", actors[i].name_actor.c_str(), actors[i].state, actors[i].isOnBeforeError);
       }
       yield();
     }

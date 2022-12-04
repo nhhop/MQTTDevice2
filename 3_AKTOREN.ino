@@ -6,23 +6,23 @@ class Actor
   unsigned char ON;
 
 public:
+  bool remote = false;
   unsigned char pin_actor = 9; // the number of the LED pin
-  String argument_actor;
-  String name_actor;
+  String mqtttopic;
+  String name;
   unsigned char power_actor;
   bool isOn;
   bool isInverted = false;
   bool switchable;              // actors switchable on error events?
   bool isOnBeforeError = false; // isOn status before error event
-  bool actor_state = true;      // Error state actor
-  bool setGrafana = false;
+  bool state = true;      // Error state actor
 
   // MQTT Publish
   char actor_mqtttopic[50]; // Für MQTT Kommunikation
 
-  Actor(String pin, String argument, String aname, bool ainverted, bool aswitchable, bool agrafana)
+  Actor(String pin, String argument, String aname, bool ainverted, bool aswitchable, bool remote)
   {
-    change(pin, argument, aname, ainverted, aswitchable, agrafana);
+    change(pin, argument, aname, ainverted, aswitchable, remote);
   }
 
   void Update()
@@ -51,7 +51,7 @@ public:
     }
   }
 
-  void change(const String &pin, const String &argument, const String &aname, const bool &ainverted, const bool &aswitchable, const bool &agrafana)
+  void change(const String &pin, const String &argument, const String &aname, const bool &ainverted, const bool &aswitchable, const bool &new_remote)
   {
     // Set PIN
     if (isPin(pin_actor))
@@ -70,11 +70,11 @@ public:
     }
 
     isOn = false;
-    name_actor = aname;
-    if (argument_actor != argument)
+    name = aname;
+    if (mqtttopic != argument)
     {
       mqtt_unsubscribe();
-      argument_actor = argument;
+      mqtttopic = argument;
       mqtt_subscribe();
 
       // MQTT Publish
@@ -93,14 +93,14 @@ public:
       OFF = HIGH;
     }
     switchable = aswitchable;
-    actor_state = true;
+    state = true;
     isOnBeforeError = false;
-    setGrafana = agrafana;
+    remote = new_remote;
   }
 
-  /* MQTT Publish
+  //MQTT Publish
   void publishmqtt() {
-    if (client.connected()) {
+    if (pubsubClient.connected()) {
       StaticJsonDocument<256> doc;
       JsonObject actorObj = doc.createNestedObject("Actor");
       if (isOn) {
@@ -112,18 +112,18 @@ public:
 
       char jsonMessage[100];
       serializeJson(doc, jsonMessage);
-      char new_argument_actor[50];
-      new_argument_actor.toCharArray(argument_actor, new_argument_actor.length() + 1);
-      client.publish(new_argument_actor, jsonMessage);
+      char topic[50];
+      mqtttopic.toCharArray(topic, 50);
+      pubsubClient.publish(topic, jsonMessage);
     }
   }
-  */
+  
   void mqtt_subscribe()
   {
     if (pubsubClient.connected())
     {
       char subscribemsg[50];
-      argument_actor.toCharArray(subscribemsg, 50);
+      mqtttopic.toCharArray(subscribemsg, 50);
       DEBUG_MSG("Act: Subscribing to %s\n", subscribemsg);
       pubsubClient.subscribe(subscribemsg);
     }
@@ -134,7 +134,7 @@ public:
     if (pubsubClient.connected())
     {
       char subscribemsg[50];
-      argument_actor.toCharArray(subscribemsg, 50);
+      mqtttopic.toCharArray(subscribemsg, 50);
       DEBUG_MSG("Act: Unsubscribing from %s\n", subscribemsg);
       pubsubClient.unsubscribe(subscribemsg);
     }
@@ -200,24 +200,24 @@ void handleRequestActors()
     {
       JsonObject actorsObj = doc.createNestedObject();
 
-      actorsObj["name"] = actors[i].name_actor;
+      actorsObj["name"] = actors[i].name;
       actorsObj["status"] = actors[i].isOn;
       actorsObj["power"] = actors[i].power_actor;
-      actorsObj["mqtt"] = actors[i].argument_actor;
+      actorsObj["mqtt"] = actors[i].mqtttopic;
       actorsObj["pin"] = PinToString(actors[i].pin_actor);
       actorsObj["sw"] = actors[i].switchable;
-      actorsObj["state"] = actors[i].actor_state;
-      actorsObj["grafana"] = actors[i].setGrafana;
+      actorsObj["state"] = actors[i].state;
+      actorsObj["remote"] = actors[i].remote;
       yield();
     }
   }
   else
   {
-    doc["name"] = actors[id].name_actor;
-    doc["mqtt"] = actors[id].argument_actor;
+    doc["name"] = actors[id].name;
+    doc["mqtt"] = actors[id].mqtttopic;
     doc["sw"] = actors[id].switchable;
     doc["inv"] = actors[id].isInverted;
-    doc["grafana"] = actors[id].setGrafana;
+    doc["remote"] = actors[id].remote;
   }
 
   String response;
@@ -238,11 +238,11 @@ void handleSetActor()
   }
 
   String ac_pin = PinToString(actors[id].pin_actor);
-  String ac_argument = actors[id].argument_actor;
-  String ac_name = actors[id].name_actor;
+  String ac_argument = actors[id].mqtttopic;
+  String ac_name = actors[id].name;
   bool ac_isinverted = actors[id].isInverted;
   bool ac_switchable = actors[id].switchable;
-  bool ac_grafana = actors[id].setGrafana;
+  bool ac_remote = actors[id].remote;
 
   for (int i = 0; i < server.args(); i++)
   {
@@ -266,13 +266,13 @@ void handleSetActor()
     {
       ac_switchable = checkBool(server.arg(i));
     }
-    if (server.argName(i) == "grafana")
+    if (server.argName(i) == "remote")
     {
-      ac_grafana = checkBool(server.arg(i));
+      ac_remote = checkBool(server.arg(i));
     }
     yield();
   }
-  actors[id].change(ac_pin, ac_argument, ac_name, ac_isinverted, ac_switchable, ac_grafana);
+  actors[id].change(ac_pin, ac_argument, ac_name, ac_isinverted, ac_switchable, ac_remote);
   saveConfig();
   server.send(201, "text/plain", "created");
 }
@@ -288,7 +288,7 @@ void handleDelActor()
     }
     else
     {
-      actors[i].change(PinToString(actors[i + 1].pin_actor), actors[i + 1].argument_actor, actors[i + 1].name_actor, actors[i + 1].isInverted, actors[i + 1].switchable, actors[i + 1].setGrafana);
+      actors[i].change(PinToString(actors[i + 1].pin_actor), actors[i + 1].mqtttopic, actors[i + 1].name, actors[i + 1].isInverted, actors[i + 1].switchable, actors[i + 1].remote);
     }
     yield();
   }

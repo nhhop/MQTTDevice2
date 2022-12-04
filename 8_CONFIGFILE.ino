@@ -263,13 +263,13 @@ bool saveConfig()
   {
     JsonObject actorsObj = actorsArray.createNestedObject();
     actorsObj["PIN"] = PinToString(actors[i].pin_actor);
-    actorsObj["NAME"] = actors[i].name_actor;
-    actorsObj["SCRIPT"] = actors[i].argument_actor;
+    actorsObj["NAME"] = actors[i].name;
+    actorsObj["SCRIPT"] = actors[i].mqtttopic;
     actorsObj["INV"] = (int)actors[i].isInverted;
     actorsObj["SW"] = (int)actors[i].switchable;
-    actorsObj["GRAF"] = (int)actors[i].setGrafana;
+    actorsObj["GRAF"] = (int)actors[i].remote;
 
-    DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d GRAF: %d\n", (i + 1), actors[i].name_actor.c_str(), actors[i].argument_actor.c_str(), PinToString(actors[i].pin_actor).c_str(), actors[i].isInverted, actors[i].switchable, actors[i].setGrafana);
+    DEBUG_MSG("Actor #: %d Name: %s MQTT: %s PIN: %s INV: %d SW: %d GRAF: %d\n", (i + 1), actors[i].name.c_str(), actors[i].mqtttopic.c_str(), PinToString(actors[i].pin_actor).c_str(), actors[i].isInverted, actors[i].switchable, actors[i].remote);
   }
   if (numberOfActors == 0)
   {
@@ -307,7 +307,7 @@ bool saveConfig()
     indObj["DELAY"] = inductionCooker.delayAfteroff;
     indObj["ENABLED"] = (int)inductionCooker.isEnabled;
     indObj["PL"] = inductionCooker.powerLevelOnError;
-    indObj["GRAF"] = (int)inductionCooker.setGrafana;
+    indObj["GRAF"] = (int)inductionCooker.remote;
     DEBUG_MSG("Induction: %d MQTT: %s Relais (WHITE): %s Command channel (YELLOW): %s Backchannel (BLUE): %s Delay after power off %d Power level on error: %d\n", inductionCooker.isEnabled, inductionCooker.mqtttopic.c_str(), PinToString(inductionCooker.PIN_WHITE).c_str(), PinToString(inductionCooker.PIN_YELLOW).c_str(), PinToString(inductionCooker.PIN_INTERRUPT).c_str(), (inductionCooker.delayAfteroff / 1000), inductionCooker.powerLevelOnError);
   }
   else

@@ -30,6 +30,7 @@
 #include <NTPClient.h>
 #include "InnuTicker.h"         // Bibliothek für Hintergrund Aufgaben (Tasks)
 #include <PubSubClient.h>       // MQTT Kommunikation 2.8.0
+#include <uMQTTBroker.h>        // MQTT Broker
 #include <CertStoreBearSSL.h>   // WebUpdate
 
 extern "C"
@@ -63,6 +64,7 @@ ESP8266WebServer server(80);
 WiFiManager wifiManager;
 WiFiClient espClient;
 PubSubClient pubsubClient(espClient);
+uMQTTBroker mqttBroker;
 ESP8266HTTPUpdateServer httpUpdate;
 MDNSResponder mdns;
 
