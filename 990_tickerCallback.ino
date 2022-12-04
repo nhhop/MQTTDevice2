@@ -14,10 +14,6 @@ void tickerDispCallback() // Timer Objekt Display
 {
   cbpiEventSystem(EM_DISPUP);
 }
-void tickerInfluxDBCallback() // Timer Objekt Influx Datenbank
-{
-  cbpiEventSystem(EM_DB);
-}
 
 void tickerMQTTCallback() // Ticker helper function calling Event MQTT Error
 {

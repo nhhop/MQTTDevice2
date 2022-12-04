@@ -88,14 +88,6 @@ void setup()
   // Starte OLED Display
   dispStartScreen();
 
-  // Influx Datenbank
-  if (startDB)
-  {
-    setInfluxDB();
-    TickerInfluxDB.start();
-    if (!startVis)
-      TickerInfluxDB.pause();
-  }
   if (startBuzzer)
   {
     pins_used[PIN_BUZZER] = true;
@@ -137,7 +129,6 @@ void setupServer()
   server.on("/reqFirm", handleRequestFirm);
   server.on("/setMisc", handleSetMisc);           // Misc ändern
   server.on("/startHTTPUpdate", startHTTPUpdate); // Firmware WebUpdate
-  server.on("/visualisieren", visualisieren);     // Visualisierung
 
   // FSBrowser initialisieren
   server.on("/list", HTTP_GET, handleFileList); // Verzeichnisinhalt

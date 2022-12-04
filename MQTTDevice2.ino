@@ -31,7 +31,6 @@
 #include "InnuTicker.h"         // Bibliothek für Hintergrund Aufgaben (Tasks)
 #include <PubSubClient.h>       // MQTT Kommunikation 2.8.0
 #include <CertStoreBearSSL.h>   // WebUpdate
-#include <InfluxDbClient.h>     // InfluxDB mit Grafana
 
 extern "C"
 {
@@ -138,7 +137,6 @@ EventManager gEM; //  Eventmanager Objekt Queues
 #define EM_MQTTSUB 28
 #define EM_SETNTP 29
 #define EM_DISPUP 30
-#define EM_DB 33
 #define EM_LOG 35
 
 // Event für Sensoren, Aktor und Induktion
@@ -198,18 +196,6 @@ unsigned long lastSenInd = 0; // Timestamp induction on sensor error
 int sensorsStatus = 0;
 int actorsStatus = 0;
 int inductionStatus = 0;
-
-// Influx Server (optional)
-#define numberOfDBMax 3
-InfluxDBClient dbClient;
-bool startDB = false;
-bool startVis = false;
-char dbServer[28] = "http://192.168.100.31:8086"; // InfluxDB Server IP
-char dbUser[15] = "";
-char dbPass[15] = "";
-char dbDatabase[11] = "mqttdevice";
-char dbVisTag[15] = "";
-unsigned long upInflux = 15000;
 
 // FSBrowser
 File fsUploadFile; // a File object to temporarily store the received file

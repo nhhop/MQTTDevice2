@@ -98,20 +98,6 @@ void mqttcallback(char *topic, unsigned char *payload, unsigned int length)
       // DEBUG_MSG("%s\n", "*** Verwerfe MQTT wegen Status Induktion (Event handling)");
   }
 
-  if (cbpi == true)     // CBPi3 = false CBPi4 = true
-  {
-    //
-  }
-  else if (startDB)     // Visualisierung nach Influx nur CBPi3
-  {
-    for (int i = 0; i < numberOfDBMax; i++)
-    {
-      if (dbInflux[i].kettle_topic == topic)
-        dbInflux[i].handlemqtt(payload_msg);
-      yield();
-    }
-  }
-
   for (int i = 0; i < numberOfActors; i++)
   {
     if (actors[i].argument_actor == topic)
@@ -158,14 +144,7 @@ void handleRequestMisc()
   doc["upsen"] = SEN_UPDATE / 1000;
   doc["upact"] = ACT_UPDATE / 1000;
   doc["upind"] = IND_UPDATE / 1000;
-  doc["dbserver"] = dbServer;
-  doc["startdb"] = startDB;
-  doc["dbdatabase"] = dbDatabase;
-  doc["dbuser"] = dbUser;
-  doc["dbpass"] = dbPass;
-  doc["dbup"] = (upInflux / 1000);
   doc["mqtt_state"] = oledDisplay.mqttOK; // Anzeige MQTT Status -> mqtt_state verzögerter Status!
-  doc["vistag"] = dbVisTag;
   doc["alertstate"] = alertState;
   if (alertState)
     alertState = false;
@@ -285,84 +264,10 @@ void handleSetMisc()
           IND_UPDATE = newiup * 1000;
       }
     }
-    if (server.argName(i) == "dbserver")
-    {
-      server.arg(i).toCharArray(dbServer, sizeof(dbServer));
-      checkChars(dbServer);
-    }
-    if (server.argName(i) == "startdb")
-    {
-      startDB = checkBool(server.arg(i));
-    }
-    if (server.argName(i) == "dbdatabase")
-    {
-      server.arg(i).toCharArray(dbDatabase, sizeof(dbDatabase));
-      checkChars(dbDatabase);
-    }
-    if (server.argName(i) == "dbuser")
-    {
-      server.arg(i).toCharArray(dbUser, sizeof(dbUser));
-      checkChars(dbUser);
-    }
-    if (server.argName(i) == "dbpass")
-    {
-      server.arg(i).toCharArray(dbPass, sizeof(dbPass));
-      checkChars(dbPass);
-    }
-    if (server.argName(i) == "dbup")
-    {
-      if (isValidInt(server.arg(i)))
-      {
-        upInflux = server.arg(i).toInt() * 1000;
-      }
-    }
+   
     yield();
   }
   saveConfig();
-  server.send(201, "text/plain", "created");
-}
-
-// Some helper functions WebIf
-void visualisieren()
-{
-  for (int i = 0; i < server.args(); i++)
-  {
-    if (server.argName(i) == "vistag")
-    {
-      server.arg(i).toCharArray(dbVisTag, sizeof(dbVisTag));
-      checkChars(dbVisTag);
-    }
-    if (server.argName(i) == "startvis")
-    {
-      startVis = checkBool(server.arg(i));
-    }
-    yield();
-  }
-  if (startDB && startVis)
-  {
-    if (checkDBConnect())
-    {
-      fsUploadFile = LittleFS.open("/vistag.txt", "w");
-      int bytesWritten = fsUploadFile.print(dbVisTag);
-      fsUploadFile.close();
-      startVis = true;
-      TickerInfluxDB.interval(upInflux);
-      TickerInfluxDB.start();
-    }
-    else
-    {
-      startVis = false;
-      TickerInfluxDB.stop();
-    }
-    // TickerInfluxDB.resume();
-  }
-  else
-  {
-    if (LittleFS.exists("/vistag.txt"))
-      LittleFS.remove("/vistag.txt");
-    TickerInfluxDB.pause();
-  }
-
   server.send(201, "text/plain", "created");
 }
 

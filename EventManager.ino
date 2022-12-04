@@ -153,18 +153,7 @@ void listenerSystem(int event, int parm) // System event listener
       }
       if (inductionCooker.isEnabled)
         inductionCooker.mqtt_subscribe();
-      if (cbpi == true) // CBPi4
-      {
-        // 
-      }
-      else if (startDB)
-      {
-        for (int i = 0; i < numberOfDBMax; i++)
-        {
-          dbInflux[i].mqtt_subscribe();
-          yield();
-        }
-      }
+     
       oledDisplay.mqttOK = true; // Display MQTT
       mqtt_state = true;         // MQTT state ok
       //if (TickerMQTT.state() == RUNNING)
@@ -194,9 +183,6 @@ void listenerSystem(int event, int parm) // System event listener
   case EM_DISPUP: // Display screen output update (30)
     if (oledDisplay.dispEnabled)
       oledDisplay.dispUpdate();
-    break;
-  case EM_DB: // InfluxDB
-    sendData();
     break;
   case EM_LOG:
     if (LittleFS.exists("/log1.txt")) // WebUpdate Zertifikate

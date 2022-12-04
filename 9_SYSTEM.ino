@@ -97,7 +97,6 @@ void setTicker()
   TickerMQTT.config(tickerMQTTCallback, tickerMQTT, 0);
   TickerWLAN.config(tickerWLANCallback, tickerWLAN, 0);
   TickerNTP.config(tickerNTPCallback, NTP_INTERVAL, 0);
-  TickerInfluxDB.config(tickerInfluxDBCallback, upInflux, 0);
   TickerMQTT.stop();
   TickerWLAN.stop();
 }

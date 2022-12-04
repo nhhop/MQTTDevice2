@@ -16,8 +16,6 @@ void loop()
     TickerInd.update();
   if (useDisplay)           // Display Ticker
     TickerDisp.update();
-  if (startDB && startVis && !cbpi)  // InfluxDB Ticker
-    TickerInfluxDB.update();
 
   TickerNTP.update();       // NTP Ticker
 }

@@ -215,31 +215,6 @@ bool loadConfig()
   DEBUG_MSG("Actors update intervall: %d sec\n", (ACT_UPDATE / 1000));
   DEBUG_MSG("Induction update intervall: %d sec\n", (IND_UPDATE / 1000));
 
-  startDB = false;
-  if (miscObj["STARTDB"] || miscObj["STARTDB"] == "1")
-    startDB = true;
-  if (cbpi)   // CBPi4
-    startDB = false;
-
-  if (miscObj.containsKey("DBSERVER"))
-    strlcpy(dbServer, miscObj["DBSERVER"], sizeof(dbServer));
-  if (miscObj.containsKey("DB"))
-    strlcpy(dbDatabase, miscObj["DB"], sizeof(dbDatabase));
-  if (miscObj.containsKey("DBUSER"))
-    strlcpy(dbUser, miscObj["DBUSER"], sizeof(dbUser));
-  if (miscObj.containsKey("DBPASS"))
-    strlcpy(dbPass, miscObj["DBPASS"], sizeof(dbPass));
-  if (miscObj.containsKey("DBUP"))
-    upInflux = miscObj["DBUP"];
-
-  if (startDB)
-  {
-    DEBUG_MSG("InfluxDB Server URL %s User: %s Pass: %s Update %d\n", dbServer, dbUser, dbPass, upInflux);
-  }
-  else
-  {
-    DEBUG_MSG("InfluxDB Server: %d\n", startDB);
-  }
   if (miscObj.containsKey("MQTTHOST"))
   {
     strlcpy(mqtthost, miscObj["MQTTHOST"], sizeof(mqtthost));
@@ -256,47 +231,6 @@ bool loadConfig()
   DEBUG_MSG("JSON config length: %d\n", len);
   int memoryUsed = doc.memoryUsage();
   DEBUG_MSG("JSON memory usage: %d\n", memoryUsed);
-
-  // Influx Datenbank
-  if (startDB)
-  {
-    setInfluxDB();
-    // Lade visTag wenn vorhanden
-    if (LittleFS.exists("/vistag.txt"))
-    {
-      fsUploadFile = LittleFS.open("/vistag.txt", "r");
-      int cIndex = 0;
-      if (fsUploadFile.available())
-      {
-        char c = fsUploadFile.read();
-        while (c != '\n' && cIndex < 15) // Newline oder Array End
-        {
-          dbVisTag[cIndex] = c;
-          cIndex++;
-          dbVisTag[cIndex] = '\0';
-          if (!fsUploadFile.available())
-            break;
-          c = fsUploadFile.read();
-        }
-      }
-      fsUploadFile.close();
-
-      if (checkDBConnect())
-      {
-        DEBUG_MSG("Found visualize tag dbVis: %s\n", dbVisTag);
-        startVis = true;
-        TickerInfluxDB.interval(upInflux);
-        TickerInfluxDB.start();
-      }
-    }
-    else
-    {
-      TickerInfluxDB.config(upInflux, 0);
-      TickerInfluxDB.start();
-    }
-  }
-  else
-    TickerInfluxDB.stop();
 
   if (startBuzzer)
     sendAlarm(ALARM_ON);
@@ -435,30 +369,12 @@ bool saveConfig()
   miscObj["delay_mqtt"] = wait_on_error_mqtt;
   miscObj["enable_mqtt"] = (int)StopOnMQTTError;
   DEBUG_MSG("Switch off actors on error enabled after %d sec\n", (wait_on_error_mqtt / 1000));
-  if (cbpi)   // CBPi4
-  {
-    startDB = false;
-    TickerInfluxDB.stop();
-  }
+ 
   miscObj["buzzer"] = (int)startBuzzer;
   miscObj["cbpi"] = (int)cbpi;
   miscObj["mdns_name"] = nameMDNS;
   miscObj["mdns"] = (int)startMDNS;
-  miscObj["STARTDB"] = (int)startDB;
-  miscObj["DBSERVER"] = dbServer;
-  miscObj["DB"] = dbDatabase;
-  miscObj["DBUSER"] = dbUser;
-  miscObj["DBPASS"] = dbPass;
-  miscObj["DBUP"] = upInflux;
-  if (startDB)
-  {
-    DEBUG_MSG("InfluxDB Server URL %s User: %s Pass: %s Update %d\n", dbServer, dbUser, dbPass, upInflux);
-  }
-  else
-  {
-    DEBUG_MSG("InfluxDB Server: %d\n", startDB);
-  }
-
+ 
   miscObj["MQTTHOST"] = mqtthost;
   miscObj["upsen"] = SEN_UPDATE;
   miscObj["upact"] = ACT_UPDATE;
