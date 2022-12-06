@@ -191,7 +191,7 @@ public:
   {
     for (int i = 0; i < 33; i++)
     {
-      for (int j = 0; j < 6; j++)
+      for (int j = 0; j < 11; j++)
       {
         if (CMD[j][i] == 1)
         {
