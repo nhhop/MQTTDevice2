@@ -1,44 +1,86 @@
-bool publish(String topic, String data, uint8_t qos=0, uint8_t retain=0)
+class mqtt
 {
-  char pubsub_topic[50];
-  topic.toCharArray(pubsub_topic, 50);
-  char pubsub_msg[100];
-  data.toCharArray(pubsub_msg, 100);
-  pubsubClient.publish(pubsub_topic, pubsub_msg);
-  
-  return true;
+  private:
+      
+  public:
+    bool isEnabled;
+    bool externalBroker;
 
-  return mqttBroker.publish(topic, data);
+    mqtt()
+    {
+      
+    }
 
-  return false;
-}
+    void change()
+    {
 
-bool subscribe(String topic, uint8_t qos=0)
-{
-  char pubsub_topic[50];
-  topic.toCharArray(pubsub_topic, 50);
-  pubsubClient.subscribe(pubsub_topic);
+    }
+    
+    bool publish(String topic, String data, uint8_t qos=0, uint8_t retain=0)
+    {
+      if (!isEnabled)
+        return false;
 
-  return true;
-  
-  return mqttBroker.subscribe(topic);
-  
-  return false;
-}
+      if (externalBroker)
+      {
+        if (!pubsubClient.connected())
+          return false;
+          
+        char pubsub_topic[50];
+        topic.toCharArray(pubsub_topic, 50);
+        char pubsub_msg[100];
+        data.toCharArray(pubsub_msg, 100);
+        pubsubClient.publish(pubsub_topic, pubsub_msg);
+        return true;
+      }
+      else
+        return mqttBroker.publish(topic, data);
+    }
 
-bool unsubscribe(String topic)
-{
-  char pubsub_topic[50];
-  topic.toCharArray(pubsub_topic, 50);
+    bool subscribe(String topic, uint8_t qos=0)
+    {
+      if (!isEnabled)
+        return false;
 
-  pubsubClient.unsubscribe(pubsub_topic);
+      if (externalBroker)
+      {
+        if (!pubsubClient.connected())
+          return false;
 
-  return true;
+        char pubsub_topic[50];
+        topic.toCharArray(pubsub_topic, 50);
+        pubsubClient.subscribe(pubsub_topic);
 
-  return mqttBroker.subscribe(topic);
-  
-  return false;
-}
+        return true;
+      }
+      else
+        return mqttBroker.subscribe(topic);
+    }
+
+    bool unsubscribe(String topic)
+    {
+      if (!isEnabled)
+        return false;
+
+      if (externalBroker)
+      {
+        if (!pubsubClient.connected())
+          return false;
+
+        char pubsub_topic[50];
+        topic.toCharArray(pubsub_topic, 50);
+
+        pubsubClient.unsubscribe(pubsub_topic);
+
+        return true;
+      }
+      else
+        return mqttBroker.subscribe(topic);
+    }
+};
+
+mqtt mqttConnection = mqtt();
+
 
 void mqttcallback(char *topic, unsigned char *payload, unsigned int length)
 {
@@ -97,4 +139,41 @@ void mqttcallback(char *topic, unsigned char *payload, unsigned int length)
       yield();
     }
   }
+}
+
+
+void handleRequestMqtt()
+{
+  StaticJsonDocument<512> doc;
+  doc["mqtthost"] = mqtthost;
+  doc["enable_mqtt"] = StopOnMQTTError;
+  doc["delay_mqtt"] = wait_on_error_mqtt / 1000;
+  doc["mqtt_state"] = oledDisplay.mqttOK; // Anzeige MQTT Status -> mqtt_state verzögerter Status!
+  
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+void handleSetMqtt()
+{
+  for (int i = 0; i < server.args(); i++)
+  {
+    if (server.argName(i) == "MQTTHOST")
+      server.arg(i).toCharArray(mqtthost, sizeof(mqtthost));
+
+    if (server.argName(i) == "enable_mqtt")
+    {
+      StopOnMQTTError = checkBool(server.arg(i));
+    }
+    if (server.argName(i) == "delay_mqtt")
+      if (isValidInt(server.arg(i)))
+      {
+        wait_on_error_mqtt = server.arg(i).toInt() * 1000;
+      }
+    
+    yield();
+  }
+  saveConfig();
+  server.send(201, "text/plain", "created");
 }

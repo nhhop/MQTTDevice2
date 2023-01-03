@@ -172,28 +172,30 @@ public:
     }
   }
 
+  // MQTT Publish
   /*
-          // MQTT Publish
-          void publishmqtt() {
-            if (client.connected()) {
-              StaticJsonBuffer<256> jsonBuffer;
-              JsonObject& json = jsonBuffer.createObject();
-              if (isInduon) {
-                json["state"] = "on";
-                json["power"] = String(power);
-              }
-              else
-                json["state"] = "off";
+  void mqtt_publish() 
+  {
+    if (pubsubClient.connected()) 
+    {
+      StaticJsonDocument<256> doc;
+      JsonObject indObj = doc.createNestedObject("Induction");
+      if (isInduon) {
+        indObj["State"] = "on";
+        indObj["power"] = String(power);
+      }
+      else
+        indObj["State"] = "off";
 
-              char jsonMessage[100];
-              json.printTo(jsonMessage);
-              client.publish(induction_mqtttopic, jsonMessage);
-              DBG_PRINT("MQTT pub message: ");
-              DBG_PRINTLN(jsonMessage);
-            }
-          }
-    */
-
+      char jsonMessage[100];
+      serializeJson(doc, jsonMessage);
+      char topic[50];
+      mqtttopic.toCharArray(topic, 50);
+      pubsubClient.publish(topic, jsonMessage);
+    }
+  }
+  */
+ 
   void handlemqtt(char *payload)
   {
     StaticJsonDocument<128> doc;

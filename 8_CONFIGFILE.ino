@@ -170,13 +170,6 @@ bool loadConfig()
   DEBUG_MSG("Wait on sensor error actors: %d sec\n", wait_on_Sensor_error_actor / 1000);
   DEBUG_MSG("Wait on sensor error induction: %d sec\n", wait_on_Sensor_error_induction / 1000);
 
-  StopOnMQTTError = false;
-  if (miscObj["enable_mqtt"] || miscObj["enable_mqtt"] == "1")
-    StopOnMQTTError = true;
-  if (miscObj.containsKey("delay_mqtt"))
-    wait_on_error_mqtt = miscObj["delay_mqtt"];
-  DEBUG_MSG("Switch off actors on MQTT error: %d after %d sec\n", StopOnMQTTError, (wait_on_error_mqtt / 1000));
-
   startBuzzer = false;
   if (miscObj["buzzer"] || miscObj["buzzer"] == "1")
     startBuzzer = true;
@@ -215,15 +208,29 @@ bool loadConfig()
   DEBUG_MSG("Actors update intervall: %d sec\n", (ACT_UPDATE / 1000));
   DEBUG_MSG("Induction update intervall: %d sec\n", (IND_UPDATE / 1000));
 
-  if (miscObj.containsKey("MQTTHOST"))
+  
+  JsonArray mqttArray = doc["mqtt"];
+  JsonObject mqttObj = mqttArray[0];
+  if (mqttObj.containsKey("ENABLED"))
   {
-    strlcpy(mqtthost, miscObj["MQTTHOST"], sizeof(mqtthost));
-    DEBUG_MSG("MQTT server IP: %s\n", mqtthost);
+    StopOnMQTTError = false;
+    if (mqttObj["enable_mqtt"] || mqttObj["enable_mqtt"] == "1")
+      StopOnMQTTError = true;
+    if (mqttObj.containsKey("delay_mqtt"))
+      wait_on_error_mqtt = mqttObj["delay_mqtt"];
+    DEBUG_MSG("Switch off actors on MQTT error: %d after %d sec\n", StopOnMQTTError, (wait_on_error_mqtt / 1000));
+
+    if (mqttObj.containsKey("MQTTHOST"))
+    {
+      strlcpy(mqtthost, mqttObj["MQTTHOST"], sizeof(mqtthost));
+      DEBUG_MSG("MQTT server IP: %s\n", mqtthost);
+    }
+    else
+    {
+      DEBUG_MSG("MQTT server not found in config file. Using default server address: %s\n", mqtthost);
+    }
   }
-  else
-  {
-    DEBUG_MSG("MQTT server not found in config file. Using default server address: %s\n", mqtthost);
-  }
+
   DEBUG_MSG("%s\n", "------ loadConfig finished ------");
   configFile.close();
   DEBUG_MSG("Config file size %d\n", size);
@@ -357,6 +364,15 @@ bool saveConfig()
   }
   DEBUG_MSG("%s\n", "--------------------");
 
+  // Write MQTT stuff  
+  JsonArray mqttArray = doc.createNestedArray("mqtt");
+  JsonObject mqttObj = mqttArray.createNestedObject();
+
+  mqttObj["MQTTHOST"] = mqtthost;
+  mqttObj["delay_mqtt"] = wait_on_error_mqtt;
+  mqttObj["enable_mqtt"] = (int)StopOnMQTTError;
+  DEBUG_MSG("Switch off actors on error enabled after %d sec\n", (wait_on_error_mqtt / 1000));
+
   // Write Misc Stuff
   JsonArray miscArray = doc.createNestedArray("misc");
   JsonObject miscObj = miscArray.createNestedObject();
@@ -366,16 +382,11 @@ bool saveConfig()
   DEBUG_MSG("Wait on sensor error actors: %d sec\n", wait_on_Sensor_error_actor / 1000);
   DEBUG_MSG("Wait on sensor error induction: %d sec\n", wait_on_Sensor_error_induction / 1000);
 
-  miscObj["delay_mqtt"] = wait_on_error_mqtt;
-  miscObj["enable_mqtt"] = (int)StopOnMQTTError;
-  DEBUG_MSG("Switch off actors on error enabled after %d sec\n", (wait_on_error_mqtt / 1000));
- 
   miscObj["buzzer"] = (int)startBuzzer;
   miscObj["cbpi"] = (int)cbpi;
   miscObj["mdns_name"] = nameMDNS;
   miscObj["mdns"] = (int)startMDNS;
- 
-  miscObj["MQTTHOST"] = mqtthost;
+   
   miscObj["upsen"] = SEN_UPDATE;
   miscObj["upact"] = ACT_UPDATE;
   miscObj["upind"] = IND_UPDATE;

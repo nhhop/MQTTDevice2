@@ -78,14 +78,11 @@ void handleRequestMisc()
   doc["mdns"] = startMDNS;
   doc["buzzer"] = startBuzzer;
   doc["cbpi"] = cbpi;
-  doc["enable_mqtt"] = StopOnMQTTError;
-  doc["delay_mqtt"] = wait_on_error_mqtt / 1000;
   doc["del_sen_act"] = wait_on_Sensor_error_actor / 1000;
   doc["del_sen_ind"] = wait_on_Sensor_error_induction / 1000;
   doc["upsen"] = SEN_UPDATE / 1000;
   doc["upact"] = ACT_UPDATE / 1000;
   doc["upind"] = IND_UPDATE / 1000;
-  doc["mqtt_state"] = oledDisplay.mqttOK; // Anzeige MQTT Status -> mqtt_state verzögerter Status!
   doc["alertstate"] = alertState;
   if (alertState)
     alertState = false;
@@ -139,8 +136,7 @@ void handleSetMisc()
         ESP.reset();
       }
     }
-    if (server.argName(i) == "MQTTHOST")
-      server.arg(i).toCharArray(mqtthost, sizeof(mqtthost));
+    
 
     if (server.argName(i) == "buzzer")
     {
@@ -159,15 +155,7 @@ void handleSetMisc()
     {
       startMDNS = checkBool(server.arg(i));
     }
-    if (server.argName(i) == "enable_mqtt")
-    {
-      StopOnMQTTError = checkBool(server.arg(i));
-    }
-    if (server.argName(i) == "delay_mqtt")
-      if (isValidInt(server.arg(i)))
-      {
-        wait_on_error_mqtt = server.arg(i).toInt() * 1000;
-      }
+
     if (server.argName(i) == "del_sen_act")
       if (isValidInt(server.arg(i)))
       {
