@@ -293,7 +293,7 @@ void startHTTPUpdate()
         int bytesWritten = fsUploadFile.print("0");
         fsUploadFile.close();
     }
-    cbpiEventSystem(EM_REBOOT);
+    queueEventSystem(EM_REBOOT);
 }
 
 void update_progress(int cur, int total)

@@ -80,7 +80,7 @@ void setup()
 
   // Starte mDNS
   if (startMDNS)
-    cbpiEventSystem(EM_MDNSET);
+    queueEventSystem(EM_MDNSET);
   else
   {
     Serial.printf("*** SYSINFO: ESP8266 IP Addresse: %s Time: %s RSSI: %d\n", WiFi.localIP().toString().c_str(), timeClient.getFormattedTime().c_str(), WiFi.RSSI());
@@ -96,10 +96,10 @@ void setup()
   }
 
   // Starte MQTT
-  cbpiEventSystem(EM_MQTTCON); // MQTT Verbindung
-  cbpiEventSystem(EM_MQTTSUB); // MQTT Subscribe
+  queueEventSystem(EM_MQTTCON); // MQTT Verbindung
+  queueEventSystem(EM_MQTTSUB); // MQTT Subscribe
 
-  cbpiEventSystem(EM_LOG); // webUpdate log
+  queueEventSystem(EM_LOG); // webUpdate log
 
   // Verarbeite alle Events Setup
   gEM.processAllEvents();
@@ -126,8 +126,10 @@ void setupServer()
   server.on("/reqDisp", handleRequestDisp); // Infos Display für WebConfig
   server.on("/setDisp", handleSetDisp);     // Display ändern
   server.on("/reqMisc", handleRequestMisc); // Misc Infos für WebConfig
+  server.on("/reqMqtt", handleRequestMqtt); // MQTT Infos für WebConfig
   server.on("/reqFirm", handleRequestFirm);
   server.on("/setMisc", handleSetMisc);           // Misc ändern
+  server.on("/setMqtt", handleSetMqtt);           // Misc ändern
   server.on("/startHTTPUpdate", startHTTPUpdate); // Firmware WebUpdate
 
   // FSBrowser initialisieren

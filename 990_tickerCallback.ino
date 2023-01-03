@@ -1,18 +1,18 @@
 void tickerSenCallback() // Timer Objekt Sensoren
 {
-  cbpiEventSensors(sensorsStatus);
+  queueEventSensors(sensorsStatus);
 }
 void tickerActCallback() // Timer Objekt Aktoren
 {
-  cbpiEventActors(actorsStatus);
+  queueEventActors(actorsStatus);
 }
 void tickerIndCallback() // Timer Objekt Induktion
 {
-  cbpiEventInduction(inductionStatus);
+  queueEventInduction(inductionStatus);
 }
 void tickerDispCallback() // Timer Objekt Display
 {
-  cbpiEventSystem(EM_DISPUP);
+  queueEventSystem(EM_DISPUP);
 }
 
 void tickerMQTTCallback() // Ticker helper function calling Event MQTT Error
@@ -55,7 +55,7 @@ void tickerMQTTCallback() // Ticker helper function calling Event MQTT Error
       break;
     }
   }
-  cbpiEventSystem(EM_MQTTER);
+  queueEventSystem(EM_MQTTER);
 }
 
 void tickerWLANCallback() // Ticker helper function calling Event WLAN Error
@@ -93,7 +93,7 @@ void tickerWLANCallback() // Ticker helper function calling Event WLAN Error
       break;
     }
   }
-  cbpiEventSystem(EM_WLANER);
+  queueEventSystem(EM_WLANER);
 }
 
 void tickerNTPCallback() // Ticker helper function calling Event WLAN Error

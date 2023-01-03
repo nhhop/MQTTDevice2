@@ -20,9 +20,9 @@ public:
   // MQTT Publish
   char actor_mqtttopic[50]; // Für MQTT Kommunikation
 
-  Actor(String pin, String argument, String aname, bool ainverted, bool aswitchable, bool remote)
+  Actor(String pin, String new_mqtttopic, String new_name, bool new_inverted, bool new_switchable, bool remote)
   {
-    change(pin, argument, aname, ainverted, aswitchable, remote);
+    change(pin, new_mqtttopic, new_name, new_inverted, new_switchable, remote);
   }
 
   void Update()
@@ -51,7 +51,7 @@ public:
     }
   }
 
-  void change(const String &pin, const String &argument, const String &aname, const bool &ainverted, const bool &aswitchable, const bool &new_remote)
+  void change(const String &new_pin, const String &new_mqtttopic, const String &new_name, const bool &new_inverted, const bool &new_switchable, const bool &new_remote)
   {
     // Set PIN
     if (isPin(pin_actor))
@@ -61,7 +61,7 @@ public:
       millis2wait(10);
     }
 
-    pin_actor = StringToPin(pin);
+    pin_actor = StringToPin(new_pin);
     if (isPin(pin_actor))
     {
       pinMode(pin_actor, OUTPUT);
@@ -70,17 +70,17 @@ public:
     }
 
     isOn = false;
-    name = aname;
-    if (mqtttopic != argument)
+    name = new_name;
+    if (mqtttopic != new_mqtttopic)
     {
       mqtt_unsubscribe();
-      mqtttopic = argument;
+      mqtttopic = new_mqtttopic;
       mqtt_subscribe();
 
       // MQTT Publish
-      // argument.toCharArray(actor_mqtttopic, argument.length() + 1);
+      // new_mqtttopic.toCharArray(actor_mqtttopic, new_mqtttopic.length() + 1);
     }
-    if (ainverted)
+    if (new_inverted)
     {
       isInverted = true;
       ON = HIGH;
@@ -92,23 +92,25 @@ public:
       ON = LOW;
       OFF = HIGH;
     }
-    switchable = aswitchable;
+    switchable = new_switchable;
     state = true;
     isOnBeforeError = false;
     remote = new_remote;
   }
 
   //MQTT Publish
-  void publishmqtt() {
-    if (pubsubClient.connected()) {
+  void mqtt_publish() 
+  {
+    if (pubsubClient.connected()) 
+    {
       StaticJsonDocument<256> doc;
       JsonObject actorObj = doc.createNestedObject("Actor");
       if (isOn) {
-        doc["State"] = "on";
-        doc["power"] = String(power_actor);
+        actorObj["State"] = "on";
+        actorObj["power"] = String(power_actor);
       }
       else
-        doc["State"] = "off";
+        actorObj["State"] = "off";
 
       char jsonMessage[100];
       serializeJson(doc, jsonMessage);
@@ -238,7 +240,7 @@ void handleSetActor()
   }
 
   String ac_pin = PinToString(actors[id].pin_actor);
-  String ac_argument = actors[id].mqtttopic;
+  String ac_new_mqtttopic = actors[id].mqtttopic;
   String ac_name = actors[id].name;
   bool ac_isinverted = actors[id].isInverted;
   bool ac_switchable = actors[id].switchable;
@@ -256,7 +258,7 @@ void handleSetActor()
     }
     if (server.argName(i) == "script")
     {
-      ac_argument = server.arg(i);
+      ac_new_mqtttopic = server.arg(i);
     }
     if (server.argName(i) == "inv")
     {
@@ -272,7 +274,7 @@ void handleSetActor()
     }
     yield();
   }
-  actors[id].change(ac_pin, ac_argument, ac_name, ac_isinverted, ac_switchable, ac_remote);
+  actors[id].change(ac_pin, ac_new_mqtttopic, ac_name, ac_isinverted, ac_switchable, ac_remote);
   saveConfig();
   server.send(201, "text/plain", "created");
 }

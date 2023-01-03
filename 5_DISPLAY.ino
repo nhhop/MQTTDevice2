@@ -3,7 +3,7 @@ class oled
   unsigned long lastNTPupdate = 0;
 
 public:
-  bool dispEnabled = false;
+  bool isEnabled = false;
   int address = 0x3C;
 
   bool senOK = true;
@@ -20,7 +20,7 @@ public:
 
   void dispUpdate()
   {
-    if (dispEnabled == 1)
+    if (isEnabled == 1)
     {
       showDispClear();
       showDispTime(timeClient.getFormattedTime());
@@ -49,11 +49,11 @@ public:
       display.SH1106_command(SH1106_DISPLAYON);
       display.clearDisplay();
       display.display();
-      dispEnabled = is_enabled;
+      isEnabled = is_enabled;
     }
     else
     {
-      dispEnabled = is_enabled;
+      isEnabled = is_enabled;
     }
   }
 }
@@ -62,7 +62,7 @@ oledDisplay = oled();
 
 void turnDisplay()
 {
-  if (!oledDisplay.dispEnabled)
+  if (!oledDisplay.isEnabled)
   {
     if (oledDisplay.address != 0)
     {
@@ -71,7 +71,7 @@ void turnDisplay()
 
       // Display mit SH1106
       display.SH1106_command(SH1106_DISPLAYOFF);
-      oledDisplay.dispEnabled = false;
+      oledDisplay.isEnabled = false;
       TickerDisp.stop();
     }
   }
@@ -84,7 +84,7 @@ void turnDisplay()
 
       // Display mit SH1106
       display.SH1106_command(SH1106_DISPLAYON);
-      oledDisplay.dispEnabled = true;
+      oledDisplay.isEnabled = true;
       TickerDisp.start();
     }
   }
@@ -93,9 +93,9 @@ void turnDisplay()
 void handleRequestDisplay()
 {
   StaticJsonDocument<128> doc;
-  doc["enabled"] = (int)oledDisplay.dispEnabled;
+  doc["enabled"] = (int)oledDisplay.isEnabled;
   doc["updisp"] = DISP_UPDATE / 1000;
-  doc["displayOn"] = (int)oledDisplay.dispEnabled;
+  doc["displayOn"] = (int)oledDisplay.isEnabled;
   String response;
   serializeJson(doc, response);
   server.send(200, "application/json", response);
@@ -149,7 +149,7 @@ void handleSetDisp()
   {
     if (server.argName(i) == "enabled")
     {
-      oledDisplay.dispEnabled = checkBool(server.arg(i));
+      oledDisplay.isEnabled = checkBool(server.arg(i));
     }
     if (server.argName(i) == "address")
     {
@@ -171,7 +171,7 @@ void handleSetDisp()
     }
     yield();
   }
-  oledDisplay.change(address, oledDisplay.dispEnabled);
+  oledDisplay.change(address, oledDisplay.isEnabled);
   saveConfig();
   server.send(201, "text/plain", "created");
 }
@@ -180,7 +180,7 @@ void dispStartScreen() // Show Startscreen
 {
   if (useDisplay)
   {
-    if (oledDisplay.dispEnabled == 1 && oledDisplay.address != 0)
+    if (oledDisplay.isEnabled == 1 && oledDisplay.address != 0)
     {
       TickerDisp.start();
       showDispClear();

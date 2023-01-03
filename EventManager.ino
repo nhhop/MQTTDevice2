@@ -26,8 +26,8 @@ void listenerSystem(int event, int parm) // System event listener
     if (pubsubClient.connect(mqtt_clientid))
     {
       DEBUG_MSG("%s", "MQTT auto reconnect successful. Subscribing..\n");
-      cbpiEventSystem(EM_MQTTSUB); // MQTT subscribe
-      cbpiEventSystem(EM_MQTTRES); // MQTT restore
+      queueEventSystem(EM_MQTTSUB); // MQTT subscribe
+      queueEventSystem(EM_MQTTRES); // MQTT restore
       break;
     }
     if (millis() - mqttconnectlasttry >= wait_on_error_mqtt)
@@ -39,8 +39,8 @@ void listenerSystem(int event, int parm) // System event listener
         // if (useDisplay)
         //   showDispErr("MQTT ERROR")
         DEBUG_MSG("EM MQTTER: MQTT Broker %s nicht erreichbar! StopOnMQTTError: %d mqtt_state: %d\n", mqtthost, StopOnMQTTError, mqtt_state);
-        cbpiEventActors(EM_ACTER);
-        cbpiEventInduction(EM_INDER);
+        queueEventActors(EM_ACTER);
+        queueEventInduction(EM_INDER);
         mqtt_state = false; // MQTT in error state
       }
     }
@@ -75,10 +75,10 @@ void listenerSystem(int event, int parm) // System event listener
     break;
   case EM_REBOOT: // Reboot ESP (11) - manual task
     // Stop actors
-    cbpiEventActors(EM_ACTOFF);
+    queueEventActors(EM_ACTOFF);
     // Stop induction
     if (inductionCooker.isInduon)
-      cbpiEventInduction(EM_INDOFF);
+      queueEventInduction(EM_INDOFF);
     server.send(200, "text/plain", "rebooting...");
     LittleFS.end(); // unmount LittleFS
     ESP.restart();
@@ -181,7 +181,7 @@ void listenerSystem(int event, int parm) // System event listener
     }
     break;
   case EM_DISPUP: // Display screen output update (30)
-    if (oledDisplay.dispEnabled)
+    if (oledDisplay.isEnabled)
       oledDisplay.dispUpdate();
     break;
   case EM_LOG:
@@ -314,12 +314,12 @@ void listenerSensors(int event, int parm) // Sensor event listener
             DEBUG_MSG("EM SENER: Erstelle Zeitstempel für Induktion wegen Sensor Fehler: %l Wait on error induction: %d\n", lastSenInd, wait_on_Sensor_error_induction / 1000);
           }
           if (millis() - lastSenAct >= wait_on_Sensor_error_actor) // Wait bevor Event handling
-            cbpiEventActors(EM_ACTER);
+            queueEventActors(EM_ACTER);
 
           if (millis() - lastSenInd >= wait_on_Sensor_error_induction) // Wait bevor Event handling
           {
             if (inductionCooker.isInduon && inductionCooker.powerLevelOnError < 100 && inductionCooker.induction_state)
-              cbpiEventInduction(EM_INDER);
+              queueEventInduction(EM_INDER);
           }
         } // Switchable
         yield();
@@ -414,20 +414,20 @@ void listenerInduction(int event, int parm) // Induction event listener
   handleInduction();
 }
 
-void cbpiEventSystem(int parm) // System events
+void queueEventSystem(int parm) // System events
 {
   gEM.queueEvent(EventManager::kEventUser0, parm);
 }
 
-void cbpiEventSensors(int parm) // Sensor events
+void queueEventSensors(int parm) // Sensor events
 {
   gEM.queueEvent(EventManager::kEventUser1, parm);
 }
-void cbpiEventActors(int parm) // Actor events
+void queueEventActors(int parm) // Actor events
 {
   gEM.queueEvent(EventManager::kEventUser2, parm);
 }
-void cbpiEventInduction(int parm) // Induction events
+void queueEventInduction(int parm) // Induction events
 {
   gEM.queueEvent(EventManager::kEventUser3, parm);
 }

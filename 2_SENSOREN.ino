@@ -79,7 +79,7 @@ public:
       state = true;
     }
     err = sensorsStatus;
-    publishmqtt();
+    mqtt_publish();
   } // void Update
 
   void change(const String &new_address, const String &new_mqtttopic, const String &new_name, float new_offset, const bool &new_sw, const bool &new_remote)
@@ -146,21 +146,7 @@ public:
     }
   }
 
-  void handlemqtt(char *payload)
-  {
-    StaticJsonDocument<128> doc;
-    DeserializationError error = deserializeJson(doc, (const char *)payload);
-    if (error)
-    {
-      DEBUG_MSG("Act: handlemqtt deserialize Json error %s\n", error.c_str());
-      return;
-    }
-    Serial.print("Remote Sensor: ");
-    Serial.println(payload);
-    value = doc["Sensor"]["Value"];
-  }
-
-  void publishmqtt()
+  void mqtt_publish()
   {
     if (pubsubClient.connected())
     {
@@ -183,6 +169,21 @@ public:
       pubsubClient.publish(topic, jsonMessage);
     }
   }
+
+  void handlemqtt(char *payload)
+  {
+    StaticJsonDocument<128> doc;
+    DeserializationError error = deserializeJson(doc, (const char *)payload);
+    if (error)
+    {
+      DEBUG_MSG("Act: handlemqtt deserialize Json error %s\n", error.c_str());
+      return;
+    }
+    Serial.print("Remote Sensor: ");
+    Serial.println(payload);
+    value = doc["Sensor"]["Value"];
+  }
+
   int getErr()
   {
     return err;

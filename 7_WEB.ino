@@ -215,5 +215,5 @@ void handleSetMisc()
 void rebootDevice()
 {
   server.send(205, "text/plain", "reboot");
-  cbpiEventSystem(EM_REBOOT);
+  queueEventSystem(EM_REBOOT);
 }
