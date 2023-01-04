@@ -9,8 +9,8 @@ void setup()
   Serial.println();
   Serial.println();
   // Setze Namen für das MQTTDevice
-  snprintf(mqtt_clientid, 16, "ESP8266-%08X", ESP.getChipId());
-  Serial.printf("*** SYSINFO: Starte MQTTDevice %s\n", mqtt_clientid);
+  // snprintf(mqttConnection.clientid, 16, "ESP8266-%08X", ESP.getChipId());
+  // Serial.printf("*** SYSINFO: Starte MQTTDevice %s\n", mqttConnection.clientid);
 
   wifiManager.setDebugOutput(false);
   wifiManager.setMinimumSignalQuality(10);
@@ -18,11 +18,11 @@ void setup()
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-  WiFiManagerParameter cstm_mqtthost("host", "MQTT Server IP (CBPi)", mqtthost, 16);
-  WiFiManagerParameter p_hint("<small>*Sobald das MQTTDevice mit deinem WLAN verbunden ist, öffne im Browser http://mqttdevice </small>");
-  wifiManager.addParameter(&cstm_mqtthost);
-  wifiManager.addParameter(&p_hint);
-  wifiManager.autoConnect(mqtt_clientid);
+  // WiFiManagerParameter cstm_mqtthost("host", "MQTT Server IP (CBPi)", mqttConnection.host, 16);
+  // WiFiManagerParameter p_hint("<small>*Sobald das MQTTDevice mit deinem WLAN verbunden ist, öffne im Browser http://mqttdevice </small>");
+  // wifiManager.addParameter(&cstm_mqtthost);
+  // wifiManager.addParameter(&p_hint);
+  // wifiManager.autoConnect(mqttConnection.clientid);
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.mode(WIFI_STA);
   WiFi.persistent(true);
@@ -48,7 +48,7 @@ void setup()
 
     if (shouldSaveConfig) // WiFiManager
     {
-      strcpy(mqtthost, cstm_mqtthost.getValue());
+      // strcpy(mqttConnection.host, cstm_mqtthost.getValue());
       saveConfig();
     }
 
@@ -142,10 +142,9 @@ void setupServer()
   });
   server.on("/edit", HTTP_PUT, handleFileCreate);    // Datei erstellen
   server.on("/edit", HTTP_DELETE, handleFileDelete); // Datei löschen
-  server.on(
-      "/edit", HTTP_POST, []()
-      { server.send(200, "text/plain", ""); },
-      handleFileUpload);
+  server.on("/edit", HTTP_POST, []() { 
+    server.send(200, "text/plain", ""); 
+  }, handleFileUpload);
 
   server.onNotFound(handleWebRequests); // Sonstiges
 

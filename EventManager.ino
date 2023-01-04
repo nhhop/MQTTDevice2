@@ -23,7 +23,7 @@ void listenerSystem(int event, int parm) // System event listener
     break;
   case EM_MQTTER: // MQTT Error -> handling
     oledDisplay.mqttOK = false;
-    if (pubsubClient.connect(mqtt_clientid))
+    if (pubsubClient.connect(mqttConnection.clientid, mqttConnection.user, mqttConnection.password))
     {
       DEBUG_MSG("%s", "MQTT auto reconnect successful. Subscribing..\n");
       queueEventSystem(EM_MQTTSUB); // MQTT subscribe
@@ -38,7 +38,7 @@ void listenerSystem(int event, int parm) // System event listener
           sendAlarm(ALARM_ERROR);
         // if (useDisplay)
         //   showDispErr("MQTT ERROR")
-        DEBUG_MSG("EM MQTTER: MQTT Broker %s nicht erreichbar! StopOnMQTTError: %d mqtt_state: %d\n", mqtthost, StopOnMQTTError, mqtt_state);
+        DEBUG_MSG("EM MQTTER: MQTT Broker %s nicht erreichbar! StopOnMQTTError: %d mqtt_state: %d\n", mqttConnection.host, StopOnMQTTError, mqtt_state);
         queueEventActors(EM_ACTER);
         queueEventInduction(EM_INDER);
         mqtt_state = false; // MQTT in error state
@@ -129,9 +129,9 @@ void listenerSystem(int event, int parm) // System event listener
     if (WiFi.status() == WL_CONNECTED) // kein wlan = kein mqtt
     {
       DEBUG_MSG("%s\n", "Verbinde MQTT ...");
-      pubsubClient.setServer(mqtthost, 1883);
+      pubsubClient.setServer(mqttConnection.host, mqttConnection.port);
       pubsubClient.setCallback(mqttcallback);
-      pubsubClient.connect(mqtt_clientid);
+      pubsubClient.connect(mqttConnection.clientid, mqttConnection.user, mqttConnection.password);
     }
     break;
   case EM_MQTTSUB: // MQTT subscribe (28)

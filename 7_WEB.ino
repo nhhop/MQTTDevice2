@@ -73,7 +73,6 @@ bool loadFromLittlefs(String path)
 void handleRequestMisc()
 {
   StaticJsonDocument<512> doc;
-  doc["mqtthost"] = mqtthost;
   doc["mdns_name"] = nameMDNS;
   doc["mdns"] = startMDNS;
   doc["buzzer"] = startBuzzer;

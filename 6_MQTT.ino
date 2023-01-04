@@ -1,14 +1,25 @@
+
+#define maxHostSign 15
+#define maxUserSign 10
+#define maxPassSign 10
+
 class mqtt
 {
   private:
-      
+
   public:
     bool isEnabled;
     bool externalBroker;
 
+    char user[maxUserSign];
+    char password[maxPassSign];
+    char clientid[maxHostSign]; // AP-Mode und Gerätename
+    char host[maxHostSign]; // MQTT Server
+    int port;
+
     mqtt()
     {
-      
+      snprintf(clientid, maxHostSign, "ESP8266-%08X", ESP.getChipId());
     }
 
     void change()
@@ -145,10 +156,15 @@ void mqttcallback(char *topic, unsigned char *payload, unsigned int length)
 void handleRequestMqtt()
 {
   StaticJsonDocument<512> doc;
-  doc["mqtthost"] = mqtthost;
-  doc["enable_mqtt"] = StopOnMQTTError;
-  doc["delay_mqtt"] = wait_on_error_mqtt / 1000;
-  doc["mqtt_state"] = oledDisplay.mqttOK; // Anzeige MQTT Status -> mqtt_state verzögerter Status!
+  doc["mqtthost"] = mqttConnection.host;
+  doc["mqttport"] = mqttConnection.port;
+  doc["mqttuser"] = mqttConnection.user;
+  doc["mqttpass"] = mqttConnection.password;
+  doc["mqttenabled"] = !mqttConnection.isEnabled;
+
+  doc["mqtterrstop"] = StopOnMQTTError;
+  doc["mqttdelay"] = wait_on_error_mqtt / 1000;
+  doc["mqttstate"] = oledDisplay.mqttOK; // Anzeige MQTT Status -> mqtt_state verzögerter Status!
   
   String response;
   serializeJson(doc, response);
@@ -159,14 +175,35 @@ void handleSetMqtt()
 {
   for (int i = 0; i < server.args(); i++)
   {
-    if (server.argName(i) == "MQTTHOST")
-      server.arg(i).toCharArray(mqtthost, sizeof(mqtthost));
+     if (server.argName(i) == "mqtthost")
+    {
+      server.arg(i).toCharArray(mqttConnection.host, maxHostSign);
+    }
+    if (server.argName(i) == "mqttport")
+    {
+      if (isValidInt(server.arg(i)))
+      {
+        mqttConnection.port = server.arg(i).toInt();
+      }
+    }
+    if (server.argName(i) == "mqttuser")
+    {
+      server.arg(i).toCharArray(mqttConnection.user, maxUserSign);
+    }
+    if (server.argName(i) == "mqttpass")
+    {
+      server.arg(i).toCharArray(mqttConnection.password, maxPassSign);
+    }
+    if (server.argName(i) == "mqttenabled")
+    {
+      mqttConnection.isEnabled = !checkBool(server.arg(i));
+    }
 
-    if (server.argName(i) == "enable_mqtt")
+    if (server.argName(i) == "mqtterrstop")
     {
       StopOnMQTTError = checkBool(server.arg(i));
     }
-    if (server.argName(i) == "delay_mqtt")
+    if (server.argName(i) == "mqttdelay")
       if (isValidInt(server.arg(i)))
       {
         wait_on_error_mqtt = server.arg(i).toInt() * 1000;

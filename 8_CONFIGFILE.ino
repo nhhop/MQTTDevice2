@@ -211,24 +211,21 @@ bool loadConfig()
   
   JsonArray mqttArray = doc["mqtt"];
   JsonObject mqttObj = mqttArray[0];
-  if (mqttObj.containsKey("ENABLED"))
-  {
-    StopOnMQTTError = false;
-    if (mqttObj["enable_mqtt"] || mqttObj["enable_mqtt"] == "1")
-      StopOnMQTTError = true;
-    if (mqttObj.containsKey("delay_mqtt"))
-      wait_on_error_mqtt = mqttObj["delay_mqtt"];
-    DEBUG_MSG("Switch off actors on MQTT error: %d after %d sec\n", StopOnMQTTError, (wait_on_error_mqtt / 1000));
 
-    if (mqttObj.containsKey("MQTTHOST"))
-    {
-      strlcpy(mqtthost, mqttObj["MQTTHOST"], sizeof(mqtthost));
-      DEBUG_MSG("MQTT server IP: %s\n", mqtthost);
-    }
-    else
-    {
-      DEBUG_MSG("MQTT server not found in config file. Using default server address: %s\n", mqtthost);
-    }
+  StopOnMQTTError = false;
+  if (mqttObj["MQTTERRSTOP"] || mqttObj["MQTTERRSTOP"] == "1")
+    StopOnMQTTError = true;
+  if (mqttObj.containsKey("MQTTDELAY"))
+    wait_on_error_mqtt = mqttObj["MQTTDELAY"];
+  DEBUG_MSG("Switch off actors on MQTT error: %d after %d sec\n", StopOnMQTTError, (wait_on_error_mqtt / 1000));
+
+  strlcpy(mqttConnection.host, mqttObj["MQTTHOST"] | "", maxHostSign);
+  strlcpy(mqttConnection.user, mqttObj["MQTTUSER"] | "", maxUserSign);
+  strlcpy(mqttConnection.password, mqttObj["MQTTPASS"] | "", maxPassSign);
+  mqttConnection.port = mqttObj["MQTTPORT"] | 1883;
+  mqttConnection.isEnabled = mqttObj["MQTTENABLED"] | 1;
+  if (mqttConnection.isEnabled) {
+    DEBUG_MSG("MQTT server IP: %s Port: %d User: %s Pass: %s Enabled: %d\n", mqttConnection.host, mqttConnection.port, mqttConnection.user, mqttConnection.password, mqttConnection.isEnabled);
   }
 
   DEBUG_MSG("%s\n", "------ loadConfig finished ------");
@@ -368,10 +365,18 @@ bool saveConfig()
   JsonArray mqttArray = doc.createNestedArray("mqtt");
   JsonObject mqttObj = mqttArray.createNestedObject();
 
-  mqttObj["MQTTHOST"] = mqtthost;
-  mqttObj["delay_mqtt"] = wait_on_error_mqtt;
-  mqttObj["enable_mqtt"] = (int)StopOnMQTTError;
+  mqttObj["MQTTDELAY"] = wait_on_error_mqtt;
+  mqttObj["MQTTERRSTOP"] = (int)StopOnMQTTError;
   DEBUG_MSG("Switch off actors on error enabled after %d sec\n", (wait_on_error_mqtt / 1000));
+  mqttObj["MQTTHOST"] = mqttConnection.host;
+  mqttObj["MQTTPORT"] = mqttConnection.port;
+  mqttObj["MQTTUSER"] = mqttConnection.user;
+  mqttObj["MQTTPASS"] = mqttConnection.password;
+  mqttObj["MQTTENABLED"] = (int)mqttConnection.isEnabled;
+
+  DEBUG_MSG("MQTT broker IP: %s Port: %d User: %s Pass: %s Enabled: %d\n", mqttConnection.host, mqttConnection.port, mqttConnection.user, mqttConnection.password, mqttConnection.isEnabled);
+  DEBUG_MSG("%s\n", "--------------------");
+
 
   // Write Misc Stuff
   JsonArray miscArray = doc.createNestedArray("misc");

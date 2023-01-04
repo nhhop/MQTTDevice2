@@ -80,8 +80,8 @@ unsigned char addressesFound[numberOfSensorsMax][8];
 unsigned char numberOfSensorsFound = 0;
 unsigned char numberOfActors = 0; // Gesamtzahl der Aktoren
 #define numberOfActorsMax 8       // Maximale Anzahl an Aktoren
-char mqtthost[16];                // MQTT Server
-char mqtt_clientid[16];           // AP-Mode und Gerätename
+// char mqtthost[16];                // MQTT Server
+// char mqtt_clientid[16];           // AP-Mode und Gerätename
 bool alertState = false;          // WebUpdate Status
 
 // Zeitserver Einstellungen
